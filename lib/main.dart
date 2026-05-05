@@ -100,7 +100,7 @@ class LoginScreen extends StatelessWidget {
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         child: Text(
-                          '🇮🇳  +91  ⌄',
+                          '🇮🇳  +91 ',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                         ),
                       ),
