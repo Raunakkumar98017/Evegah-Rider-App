@@ -1,9 +1,16 @@
 import 'dart:async';
-import 'success_screen.dart';
+
 import 'package:flutter/material.dart';
 
+import 'success_screen.dart';
+
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/session_service.dart';
+
 class OtpScreen extends StatefulWidget {
-  const OtpScreen({super.key});
+  final AuthService authService;
+
+  const OtpScreen({super.key, required this.authService});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -12,15 +19,20 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final TextEditingController otpController = TextEditingController();
 
+  final SessionService sessionService = SessionService();
+
   int seconds = 30;
 
   Timer? timer;
 
   String errorMessage = "";
 
+  bool isLoading = false;
+
   @override
   void initState() {
     super.initState();
+
     startTimer();
   }
 
@@ -36,14 +48,24 @@ class _OtpScreenState extends State<OtpScreen> {
     });
   }
 
-  void verifyOtp() {
-    if (otpController.text == "1234") {
+  Future<void> verifyOtp() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    bool verified = widget.authService.verifyOtp(otpController.text);
+
+    if (verified) {
       setState(() {
         errorMessage = "";
       });
 
+      // SAVE ACCESS TOKEN
+      await sessionService.saveToken(widget.authService.accessToken);
+
       Navigator.pushReplacement(
         context,
+
         MaterialPageRoute(builder: (context) => const SuccessScreen()),
       );
     } else {
@@ -51,6 +73,10 @@ class _OtpScreenState extends State<OtpScreen> {
         errorMessage = "Invalid OTP";
       });
     }
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -84,6 +110,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
                 const Text(
                   "OTP Verification",
+
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
 
@@ -91,17 +118,8 @@ class _OtpScreenState extends State<OtpScreen> {
 
                 const Text(
                   "Enter OTP sent to your phone",
+
                   style: TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-
-                const SizedBox(height: 10),
-
-                const Text(
-                  "Dummy OTP: 1234",
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
 
                 const SizedBox(height: 40),
@@ -121,6 +139,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
+
                       borderSide: BorderSide.none,
                     ),
 
@@ -141,10 +160,12 @@ class _OtpScreenState extends State<OtpScreen> {
                 Center(
                   child: seconds == 0
                       ? TextButton(
-                          onPressed: () {
+                          onPressed: () async {
                             setState(() {
                               seconds = 30;
                             });
+
+                            await widget.authService.sendOtp("");
 
                             startTimer();
                           },
@@ -153,6 +174,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         )
                       : Text(
                           "Resend OTP in 00:$seconds",
+
                           style: const TextStyle(color: Colors.grey),
                         ),
                 ),
@@ -162,10 +184,11 @@ class _OtpScreenState extends State<OtpScreen> {
                 // VERIFY BUTTON
                 SizedBox(
                   width: double.infinity,
+
                   height: 58,
 
                   child: ElevatedButton(
-                    onPressed: verifyOtp,
+                    onPressed: isLoading ? null : verifyOtp,
 
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
@@ -175,14 +198,19 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ),
 
-                    child: const Text(
-                      "Verify OTP",
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            "Verify OTP",
+
+                            style: TextStyle(
+                              fontSize: 18,
+
+                              color: Colors.white,
+
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ],

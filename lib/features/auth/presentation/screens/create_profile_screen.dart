@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'kyc_upload_screen.dart';
 
 class CreateProfileScreen extends StatefulWidget {
@@ -11,12 +15,82 @@ class CreateProfileScreen extends StatefulWidget {
 class _CreateProfileScreenState extends State<CreateProfileScreen> {
   String selectedRiderType = "Daily Commuter";
 
+  File? profileImage;
+
+  final ImagePicker picker = ImagePicker();
+
+  // CONTROLLERS
+  final TextEditingController nameController = TextEditingController();
+
+  final TextEditingController emailController = TextEditingController();
+
+  final TextEditingController emergencyController = TextEditingController();
+
   final List<String> riderTypes = [
     "Daily Commuter",
+
     "Campus Rider",
+
     "Tourist Rider",
+
     "Delivery Rider",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // DUMMY EXISTING DATA
+    nameController.text = "Moksh Patel";
+
+    emailController.text = "moksh@gmail.com";
+
+    emergencyController.text = "9876543210";
+  }
+
+  // PROFILE IMAGE PICKER
+  Future<void> pickProfileImage() async {
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        profileImage = File(image.path);
+      });
+    }
+  }
+
+  // VALIDATION
+  bool validateFields() {
+    // EMPTY VALIDATION
+    if (nameController.text.trim().isEmpty) {
+      showError("Please enter name");
+
+      return false;
+    }
+
+    // EMAIL VALIDATION
+    if (!emailController.text.contains("@")) {
+      showError("Enter valid email");
+
+      return false;
+    }
+
+    // PHONE VALIDATION
+    if (emergencyController.text.length < 10) {
+      showError("Enter valid phone number");
+
+      return false;
+    }
+
+    return true;
+  }
+
+  // ERROR MESSAGE
+  void showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +119,11 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                         children: [
                           Text(
-                            "Create Profile",
+                            "Edit Profile",
+
                             style: TextStyle(
                               fontSize: 32,
+
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -55,7 +131,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                           SizedBox(height: 6),
 
                           Text(
-                            "Setup your EV rider profile",
+                            "Update your EV rider profile",
+
                             style: TextStyle(color: Colors.grey, fontSize: 16),
                           ),
                         ],
@@ -66,10 +143,11 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                         decoration: BoxDecoration(
                           color: Colors.white,
+
                           borderRadius: BorderRadius.circular(18),
                         ),
 
-                        child: const Icon(Icons.eco, color: Colors.green),
+                        child: const Icon(Icons.edit, color: Colors.green),
                       ),
                     ],
                   ),
@@ -82,6 +160,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                     decoration: BoxDecoration(
                       color: Colors.white,
+
                       borderRadius: BorderRadius.circular(24),
                     ),
 
@@ -95,16 +174,20 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                           children: [
                             Text(
                               "Profile Completion",
+
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
+
                                 fontSize: 16,
                               ),
                             ),
 
                             Text(
-                              "40%",
+                              "85%",
+
                               style: TextStyle(
                                 color: Colors.green,
+
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -117,9 +200,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                           borderRadius: BorderRadius.circular(20),
 
                           child: LinearProgressIndicator(
-                            value: 0.4,
+                            value: 0.85,
+
                             minHeight: 10,
+
                             backgroundColor: Colors.grey.shade200,
+
                             color: Colors.green,
                           ),
                         ),
@@ -139,33 +225,56 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                           decoration: BoxDecoration(
                             color: Colors.white,
+
                             shape: BoxShape.circle,
+
                             border: Border.all(color: Colors.green, width: 3),
                           ),
 
-                          child: const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Colors.grey,
-                          ),
+                          child: profileImage != null
+                              ? ClipOval(
+                                  child: Image.file(
+                                    profileImage!,
+
+                                    fit: BoxFit.cover,
+
+                                    width: 120,
+
+                                    height: 120,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.person,
+
+                                  size: 60,
+
+                                  color: Colors.grey,
+                                ),
                         ),
 
                         Positioned(
                           bottom: 0,
                           right: 0,
 
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
+                          child: GestureDetector(
+                            onTap: pickProfileImage,
 
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
 
-                            child: const Icon(
-                              Icons.camera_alt,
-                              size: 20,
-                              color: Colors.white,
+                              decoration: const BoxDecoration(
+                                color: Colors.green,
+
+                                shape: BoxShape.circle,
+                              ),
+
+                              child: const Icon(
+                                Icons.camera_alt,
+
+                                size: 20,
+
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -175,28 +284,48 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                   const SizedBox(height: 40),
 
-                  // PERSONAL INFO CARD
+                  // PERSONAL INFO
                   Container(
                     padding: const EdgeInsets.all(20),
 
                     decoration: BoxDecoration(
                       color: Colors.white,
+
                       borderRadius: BorderRadius.circular(24),
                     ),
 
                     child: Column(
                       children: [
-                        buildTextField("Full Name", Icons.person_outline),
+                        buildTextField(
+                          hint: "Full Name",
 
-                        const SizedBox(height: 20),
+                          icon: Icons.person_outline,
 
-                        buildTextField("Email Address", Icons.email_outlined),
+                          controller: nameController,
+                        ),
 
                         const SizedBox(height: 20),
 
                         buildTextField(
-                          "Emergency Contact",
-                          Icons.phone_outlined,
+                          hint: "Email Address",
+
+                          icon: Icons.email_outlined,
+
+                          controller: emailController,
+
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        buildTextField(
+                          hint: "Emergency Contact",
+
+                          icon: Icons.phone_outlined,
+
+                          controller: emergencyController,
+
+                          keyboardType: TextInputType.phone,
                         ),
                       ],
                     ),
@@ -207,6 +336,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   // RIDER TYPE
                   const Text(
                     "Select Rider Type",
+
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
 
@@ -229,6 +359,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 18,
+
                             vertical: 14,
                           ),
 
@@ -260,67 +391,25 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                   const SizedBox(height: 30),
 
-                  // GREEN CARD
-                  Container(
-                    padding: const EdgeInsets.all(22),
-
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green.shade400, Colors.green.shade700],
-                      ),
-
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-
-                    child: const Row(
-                      children: [
-                        Icon(Icons.eco, color: Colors.white, size: 40),
-
-                        SizedBox(width: 20),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              Text(
-                                "Go Green with EVegah 🌱",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              SizedBox(height: 6),
-
-                              Text(
-                                "You are joining India’s smart EV mobility revolution.",
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // CONTINUE BUTTON
+                  // SAVE BUTTON
                   SizedBox(
                     width: double.infinity,
+
                     height: 60,
 
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const KycUploadScreen(),
-                          ),
-                        );
+                        if (validateFields()) {
+                          Navigator.push(
+                            context,
+
+                            MaterialPageRoute(
+                              builder: (context) => const KycUploadScreen(),
+                            ),
+                          );
+                        }
                       },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
 
@@ -330,10 +419,13 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       ),
 
                       child: const Text(
-                        "Continue",
+                        "Save & Continue",
+
                         style: TextStyle(
                           fontSize: 18,
+
                           color: Colors.white,
+
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -350,8 +442,18 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     );
   }
 
-  Widget buildTextField(String hint, IconData icon) {
+  Widget buildTextField({
+    required String hint,
+    required IconData icon,
+    required TextEditingController controller,
+
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return TextField(
+      controller: controller,
+
+      keyboardType: keyboardType,
+
       decoration: InputDecoration(
         hintText: hint,
 
@@ -363,6 +465,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
+
           borderSide: BorderSide.none,
         ),
 

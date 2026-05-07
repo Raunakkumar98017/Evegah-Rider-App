@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+
 import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 
 class KycUploadScreen extends StatefulWidget {
@@ -12,6 +14,31 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
   bool drivingUploaded = false;
   bool aadhaarUploaded = false;
   bool selfieUploaded = false;
+
+  String drivingFile = "";
+  String aadhaarFile = "";
+  String selfieFile = "";
+
+  Future<void> pickFile(String type) async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      String fileName = result.files.single.name;
+
+      setState(() {
+        if (type == "dl") {
+          drivingUploaded = true;
+          drivingFile = fileName;
+        } else if (type == "aadhaar") {
+          aadhaarUploaded = true;
+          aadhaarFile = fileName;
+        } else {
+          selfieUploaded = true;
+          selfieFile = fileName;
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +60,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                   // HEADER
                   const Text(
                     "KYC Verification 🪪",
+
                     style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
 
@@ -40,6 +68,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
 
                   const Text(
                     "Verify your identity to unlock EV rides",
+
                     style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
 
@@ -69,16 +98,17 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                   // DRIVING LICENSE
                   buildUploadCard(
                     title: "Driving License",
+
                     subtitle: "Upload front side of your DL",
 
                     icon: Icons.credit_card,
 
                     uploaded: drivingUploaded,
 
+                    fileName: drivingFile,
+
                     onTap: () {
-                      setState(() {
-                        drivingUploaded = true;
-                      });
+                      pickFile("dl");
                     },
                   ),
 
@@ -87,16 +117,17 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                   // AADHAAR
                   buildUploadCard(
                     title: "Aadhaar Card",
+
                     subtitle: "Upload government identity",
 
                     icon: Icons.badge_outlined,
 
                     uploaded: aadhaarUploaded,
 
+                    fileName: aadhaarFile,
+
                     onTap: () {
-                      setState(() {
-                        aadhaarUploaded = true;
-                      });
+                      pickFile("aadhaar");
                     },
                   ),
 
@@ -105,16 +136,17 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                   // SELFIE
                   buildUploadCard(
                     title: "Selfie Verification",
+
                     subtitle: "Take a clear selfie photo",
 
                     icon: Icons.camera_alt_outlined,
 
                     uploaded: selfieUploaded,
 
+                    fileName: selfieFile,
+
                     onTap: () {
-                      setState(() {
-                        selfieUploaded = true;
-                      });
+                      pickFile("selfie");
                     },
                   ),
 
@@ -145,9 +177,12 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                             children: [
                               Text(
                                 "Your Documents Are Secure 🔒",
+
                                 style: TextStyle(
                                   color: Colors.white,
+
                                   fontSize: 18,
+
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -156,6 +191,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
 
                               Text(
                                 "All uploaded files are encrypted and protected.",
+
                                 style: TextStyle(color: Colors.white70),
                               ),
                             ],
@@ -170,16 +206,28 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                   // SUBMIT BUTTON
                   SizedBox(
                     width: double.infinity,
+
                     height: 60,
 
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const DashboardScreen(),
-                          ),
-                        );
+                        if (drivingUploaded &&
+                            aadhaarUploaded &&
+                            selfieUploaded) {
+                          Navigator.push(
+                            context,
+
+                            MaterialPageRoute(
+                              builder: (context) => const VerificationScreen(),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please upload all documents"),
+                            ),
+                          );
+                        }
                       },
 
                       style: ElevatedButton.styleFrom(
@@ -192,9 +240,12 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
 
                       child: const Text(
                         "Submit Verification",
+
                         style: TextStyle(
                           fontSize: 18,
+
                           color: Colors.white,
+
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -216,6 +267,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
     required String subtitle,
     required IconData icon,
     required bool uploaded,
+    required String fileName,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -263,8 +315,10 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                 children: [
                   Text(
                     title,
+
                     style: const TextStyle(
                       fontSize: 18,
+
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -272,6 +326,14 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                   const SizedBox(height: 6),
 
                   Text(subtitle, style: const TextStyle(color: Colors.grey)),
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    fileName,
+
+                    style: const TextStyle(color: Colors.green, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -313,6 +375,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
 
           Text(
             title,
+
             style: TextStyle(
               fontSize: 12,
 
@@ -326,5 +389,75 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
 
   Widget buildLine() {
     return Expanded(child: Container(height: 2, color: Colors.grey.shade300));
+  }
+}
+
+// VERIFICATION SCREEN
+
+class VerificationScreen extends StatelessWidget {
+  const VerificationScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    Future.delayed(const Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
+    });
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+
+          children: [
+            Container(
+              height: 120,
+              width: 120,
+
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+
+                shape: BoxShape.circle,
+              ),
+
+              child: Icon(
+                Icons.verified_user,
+
+                size: 70,
+
+                color: Colors.orange.shade700,
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            const Text(
+              "Verification In Progress ⏳",
+
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 14),
+
+            const Text(
+              "Your documents are being reviewed.\nRedirecting to dashboard...",
+
+              textAlign: TextAlign.center,
+
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+
+            const SizedBox(height: 40),
+
+            const CircularProgressIndicator(color: Colors.green),
+          ],
+        ),
+      ),
+    );
   }
 }

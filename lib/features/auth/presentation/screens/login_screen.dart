@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
+
 import 'otp_screen.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController phoneController = TextEditingController();
+
+  final AuthService authService = AuthService();
+
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +64,10 @@ class LoginScreen extends StatelessWidget {
 
                                 TextSpan(
                                   text: 'Zero Emissions.',
+
                                   style: TextStyle(
                                     color: AppColors.primary,
+
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -67,9 +83,11 @@ class LoginScreen extends StatelessWidget {
                     // TITLE
                     const Text(
                       'Welcome Back 👋',
+
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
+
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -78,8 +96,10 @@ class LoginScreen extends StatelessWidget {
 
                     const Text(
                       'Login to continue your green journey',
+
                       style: TextStyle(
                         fontSize: 15,
+
                         color: AppColors.textSecondary,
                       ),
                     ),
@@ -103,9 +123,12 @@ class LoginScreen extends StatelessWidget {
 
                             child: Text(
                               '🇮🇳 +91',
+
                               style: TextStyle(
                                 fontSize: 16,
+
                                 fontWeight: FontWeight.w600,
+
                                 color: AppColors.textPrimary,
                               ),
                             ),
@@ -119,12 +142,15 @@ class LoginScreen extends StatelessWidget {
 
                           const SizedBox(width: 16),
 
-                          const Expanded(
+                          Expanded(
                             child: TextField(
+                              controller: phoneController,
+
                               keyboardType: TextInputType.phone,
 
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 border: InputBorder.none,
+
                                 hintText: 'Enter mobile number',
 
                                 hintStyle: TextStyle(
@@ -145,14 +171,37 @@ class LoginScreen extends StatelessWidget {
                       height: 58,
 
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const OtpScreen(),
-                            ),
-                          );
-                        },
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                setState(() {
+                                  isLoading = true;
+                                });
+
+                                bool exists = await authService
+                                    .checkMobileNumber(phoneController.text);
+
+                                if (exists) {
+                                  bool otpSent = await authService.sendOtp(
+                                    phoneController.text,
+                                  );
+
+                                  if (otpSent) {
+                                    Navigator.push(
+                                      context,
+
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            OtpScreen(authService: authService),
+                                      ),
+                                    );
+                                  }
+                                }
+
+                                setState(() {
+                                  isLoading = false;
+                                });
+                              },
 
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -162,24 +211,35 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
 
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-
-                          children: [
-                            Text(
-                              'Send OTP',
-                              style: TextStyle(
-                                fontSize: 18,
+                        child: isLoading
+                            ? const CircularProgressIndicator(
                                 color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+
+                                children: [
+                                  Text(
+                                    'Send OTP',
+
+                                    style: TextStyle(
+                                      fontSize: 18,
+
+                                      color: Colors.white,
+
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+
+                                  SizedBox(width: 10),
+
+                                  Icon(
+                                    Icons.arrow_forward,
+
+                                    color: Colors.white,
+                                  ),
+                                ],
                               ),
-                            ),
-
-                            SizedBox(width: 10),
-
-                            Icon(Icons.arrow_forward, color: Colors.white),
-                          ],
-                        ),
                       ),
                     ),
 
@@ -199,7 +259,9 @@ class LoginScreen extends StatelessWidget {
                             children: const [
                               Icon(
                                 Icons.lock_outline,
+
                                 size: 14,
+
                                 color: AppColors.textMuted,
                               ),
 
@@ -207,8 +269,10 @@ class LoginScreen extends StatelessWidget {
 
                               Text(
                                 'Your data is 100% secure',
+
                                 style: TextStyle(
                                   fontSize: 12,
+
                                   color: AppColors.textMuted,
                                 ),
                               ),
@@ -242,6 +306,7 @@ class LoginScreen extends StatelessWidget {
                           Expanded(
                             child: buildFeature(
                               Icons.verified_user_outlined,
+
                               'Secure Login',
                             ),
                           ),
@@ -249,6 +314,7 @@ class LoginScreen extends StatelessWidget {
                           Expanded(
                             child: buildFeature(
                               Icons.bolt_outlined,
+
                               'Instant OTP',
                             ),
                           ),
@@ -270,7 +336,9 @@ class LoginScreen extends StatelessWidget {
                         text: const TextSpan(
                           style: TextStyle(
                             fontSize: 12,
+
                             color: AppColors.textSecondary,
+
                             height: 1.5,
                           ),
 
@@ -281,8 +349,10 @@ class LoginScreen extends StatelessWidget {
 
                             TextSpan(
                               text: 'Terms of Use',
+
                               style: TextStyle(
                                 color: AppColors.primary,
+
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -291,8 +361,10 @@ class LoginScreen extends StatelessWidget {
 
                             TextSpan(
                               text: 'Privacy Policy',
+
                               style: TextStyle(
                                 color: AppColors.primary,
+
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -326,6 +398,7 @@ class LoginScreen extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
+
             color: AppColors.textPrimary,
           ),
         ),
