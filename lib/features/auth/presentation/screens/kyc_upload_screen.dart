@@ -11,9 +11,9 @@ class KycUploadScreen extends StatefulWidget {
 }
 
 class _KycUploadScreenState extends State<KycUploadScreen> {
-  bool drivingUploaded = false;
-  bool aadhaarUploaded = false;
-  bool selfieUploaded = false;
+  bool drivingUploaded = true;
+  bool aadhaarUploaded = true;
+  bool selfieUploaded = true;
 
   String drivingFile = "";
   String aadhaarFile = "";
