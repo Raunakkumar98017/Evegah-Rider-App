@@ -17,6 +17,8 @@ dependencies:
   shared_preferences: ^2.2.3
   file_picker: ^8.0.0+1
   image_picker: ^1.1.2
+
+  url_launcher: ^6.3.0
   
   # 🚨 Let Flutter use the newest, safest Google Maps
   google_maps_flutter: ^2.6.0
@@ -26,6 +28,8 @@ dependencies:
     git:
       url: https://github.com/bpillon/google_maps_cluster_manager.git
       ref: master
+
+  
 
 dev_dependencies: 
   flutter_test:

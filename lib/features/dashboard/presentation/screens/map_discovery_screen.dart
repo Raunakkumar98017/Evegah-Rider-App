@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' hide ClusterManager, Cluster;
 import 'package:http/http.dart' as http;
 import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart'; // 🚨 ADDED CLUSTER PACKAGE
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/session_service.dart';
 import '../screens/vehicle_details_screen.dart';
@@ -372,7 +373,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             ),
           ),
           
-          // C. SCAN BUTTON
+          /* C. SCAN BUTTON
           Positioned(
             bottom: 24, left: 20, right: 20,
             child: SizedBox(
@@ -394,7 +395,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                 ),
               ),
             ),
-          ),
+          ), */
         ],
       ),
     );
@@ -487,8 +488,9 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
+                         // 🚨 THE UPGRADED ADDRESS ROW WITH NAVIGATION BUTTON
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               const Icon(Icons.location_on, size: 16, color: Colors.grey),
                               const SizedBox(width: 4),
@@ -502,6 +504,27 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                                   ),
                                 ),
                               ),
+                              
+                              // 👇 THE NEW DIRECTIONS BUTTON 👇
+                              const SizedBox(width: 8),
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  // 🚨 THE FIX: Extract the coordinates from the 'center' object!
+                                  final centerPoint = zone['center']; 
+                                  
+                                  if (centerPoint != null) {
+                                    // It's a LatLng object, so we can pull latitude and longitude directly from it
+                                    _launchDirections(centerPoint.latitude, centerPoint.longitude);
+                                  } else {
+                                    debugPrint("Error: Center coordinates are missing!");
+                                  }
+                                },
+                                icon: const Icon(Icons.directions_walk, size: 16, color: Color(0xFF1E1452)),
+                                label: const Text(
+                                  "Directions", 
+                                  style: TextStyle(color: Color(0xFF1E1452), fontWeight: FontWeight.bold)
+                                 )
+                                    ),
                             ],
                           ),
                         ],
@@ -692,6 +715,21 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         );
       }
     );
+  }
+  // 🚨 THE NAVIGATION ENGINE
+  Future<void> _launchDirections(double destinationLat, double destinationLng) async {
+    // Official Universal Google Maps URL for walking directions
+    final String googleMapsUrl = 
+        "https://www.google.com/maps/dir/?api=1&destination=$destinationLat,$destinationLng&travelmode=walking";
+        
+    final Uri uri = Uri.parse(googleMapsUrl);
+
+    if (await canLaunchUrl(uri)) {
+      // Launch external forces the phone to open the native Maps app
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint("Could not open maps application.");
+    }
   }
 }
 
