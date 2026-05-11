@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:ui' as ui; 
 import 'package:flutter/services.dart'; 
 import 'package:flutter/material.dart';
@@ -537,17 +538,123 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                   ],
                 ),
               ),
+              // --- 🚨 SMART UX BANNERS START ---
+                          Builder(
+                            builder: (context) {
+                              bool isEmptyZone = zoneVehicles.isEmpty;
+                              bool isHighDemand = zoneVehicles.length > 0 && zoneVehicles.length <= 2;
+                              
+                              Map<String, dynamic>? alternativeZone;
+                              if (isEmptyZone || isHighDemand) {
+                                alternativeZone = _getBestAlternativeZone(zone);
+                              }
+
+                              return Column(
+                                children: [
+                                  // 1. The "Empty Zone" Warning
+                                  if (isEmptyZone)
+                                    Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.red.shade200),
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.error_outline, color: Colors.red, size: 22),
+                                          SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              "All bikes are currently rented from this zone.",
+                                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 13),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                  // 2. The "High Demand" Warning
+                                  if (isHighDemand)
+                                    Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.orange.shade200),
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              "High Demand Area! Bikes here usually go fast.",
+                                              style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.w600, fontSize: 13),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                  // 3. The Smart Suggestion (Alternative Zone)
+                                  if (alternativeZone != null)
+                                    Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0EDFF), 
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFF1E1452).withOpacity(0.2)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.lightbulb_circle, color: Color(0xFF1E1452), size: 28),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Text("Nearest Available Bikes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E1452))),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  "${alternativeZone['zoneName']} has ${alternativeZone['vehicles']?.length} bikes and is just ${(alternativeZone['temp_distance'] * 1000).toInt()}m away.",
+                                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          // Navigate direct to alternative!
+                                          IconButton(
+                                            icon: const Icon(Icons.directions, color: Color(0xFF1E1452)),
+                                            onPressed: () {
+                                              final altCenter = alternativeZone!['center'] as LatLng;
+                                              _launchDirections(altCenter.latitude, altCenter.longitude);
+                                            },
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              );
+                            }
+                          ),
+                          // --- 🚨 SMART UX BANNERS END ---
               Divider(thickness: 1, color: Colors.grey[300], height: 24), 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Vehicle No.", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                    Text("Status", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                  ],
-                ),
-              ),
+              // 3. Table Columns
+                          if (zoneVehicles.isNotEmpty) // 🚨 ADD THIS IF STATEMENT
+                            Padding (
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              child: Row (
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Vehicle No.", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                                  Text("Status", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                                ],
+                              ),
+                            ),
               Expanded(
                 child: zoneVehicles.isEmpty 
                   ? const Center(child: Text("No vehicles currently available here.", style: TextStyle(color: Colors.grey, fontSize: 16)))
@@ -731,6 +838,42 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       debugPrint("Could not open maps application.");
     }
   }
+  // 🚨 NEW: Smart Engine to find the nearest backup parking zone
+  Map<String, dynamic>? _getBestAlternativeZone(Map<String, dynamic> currentZone) {
+    final currentCenter = currentZone['center'] as LatLng?;
+    if (currentCenter == null) return null;
+
+    List<Map<String, dynamic>> validAlternatives = [];
+
+    for (var zone in _allLiveZones) {
+      if (zone['id'] == currentZone['id']) continue; // Skip the current one
+
+      final center = zone['center'] as LatLng?;
+      if (center == null) continue;
+
+      // Must have at least 3 bikes to be considered a "Safe" backup
+      int bikeCount = zone['vehicles']?.length ?? 0;
+      if (bikeCount < 3) continue;
+
+      double distanceKm = _calculateDistance(
+        currentCenter.latitude, currentCenter.longitude,
+        center.latitude, center.longitude
+      );
+
+      // Must be within walking distance (e.g., 1.5 km)
+      if (distanceKm <= 10) {
+        var potentialZone = Map<String, dynamic>.from(zone);
+        potentialZone['temp_distance'] = distanceKm;
+        validAlternatives.add(potentialZone);
+      }
+    }
+
+    if (validAlternatives.isEmpty) return null;
+
+    // Sort by closest distance and return the winner
+    validAlternatives.sort((a, b) => (a['temp_distance'] as double).compareTo(b['temp_distance'] as double));
+    return validAlternatives.first;
+  }
 }
 
 // 🚨 Place this at the very bottom of the file, outside of the main class!
@@ -748,3 +891,10 @@ class ZonePlace with ClusterItem {
   @override
   LatLng get location => latLng;
 }
+// 🚨 NEW: Returns distance in Kilometers using the Haversine formula
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    var p = 0.017453292519943295; // Math.PI / 180
+    var a = 0.5 - math.cos((lat2 - lat1) * p)/2 + 
+            math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p))/2;
+    return 12742 * math.asin(math.sqrt(a)); // Earth radius is 6371 km
+  }
