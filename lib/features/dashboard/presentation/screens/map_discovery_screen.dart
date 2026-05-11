@@ -21,6 +21,34 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   Set<Marker> _markers = {};
   
   BitmapDescriptor? _customZoneMarker;
+  // 🚨 AUTO-REFRESH VARIABLE
+  Timer? _refreshTimer;
+  // 🚨 THE SILENT BACKGROUND REFRESH
+  Future<void> _silentRefreshData() async {
+    try {
+      // 1. Fetch the absolute latest data from the API
+      // (Make sure to pass your queryParams if your function requires them)
+      final liveZones = await _fetchLiveZonesFromApi(); 
+
+      if (liveZones.isNotEmpty && mounted) {
+        // 2. Silently update our Master List
+        _allLiveZones = liveZones;
+        
+        // 3. Run the Sieve to re-apply any active filters and redraw the map!
+        _applyFilters(); 
+      }
+    } catch (e) {
+      // If the background refresh fails (e.g. bad internet), we just ignore it 
+      // so we don't bother the user with error popups while they are using the app.
+      print("Background refresh failed silently: $e");
+    }
+  }
+  void _startAutoRefreshEngine() {
+    // This timer will tick exactly every 10 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _silentRefreshData();
+    });
+  }
 
 
 
@@ -31,12 +59,20 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   // 🚨 ADD THIS: The Master List to remember all zones before filtering
   List<Map<String, dynamic>> _allLiveZones = [];
 
-  @override
+ @override
   void initState() {
     super.initState();
-    _loadMapData();
+    _loadMapData(); // Your existing first-load function
+    
+    // 🚨 START THE ENGINE
+    _startAutoRefreshEngine(); 
   }
-
+  @override
+  void dispose() {
+    // Kill the engine to prevent battery drain and memory leaks
+    _refreshTimer?.cancel(); 
+    super.dispose();
+  }
   Future<void> _loadMapData() async {
     // 1. Load the custom icon from assets
     try {
@@ -166,7 +202,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     
     return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
   }
-  // 🚨 THE MAGIC SIEVE (UPDATED)
+  // 🚨 THE MAGIC SIEVE 
   void _applyFilters() {
     List<Map<String, dynamic>> filteredZones = [];
 
@@ -176,21 +212,25 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     for (var zone in _allLiveZones) {
       List<dynamic> allVehiclesInZone = zone['vehicles'] ?? [];
       
-      // 2. Filter the internal list of bikes based on the Battery Slider
+      // 2. Filter the internal list of bikes
       List<dynamic> validVehicles = allVehiclesInZone.where((vehicle) {
+        
+        // 🚨 THE FIX: If the filter is completely cleared, keep EVERY bike automatically!
+        if (!isFilterActive) return true; 
+
+        // Otherwise, do the math for the active filter
         int battery = int.tryParse(vehicle['batteryPercentage']?.toString() ?? '-1') ?? -1;
         return battery >= _minBatteryLevel; 
       }).toList();
 
-      // 3. THE SMART RULE: 
-      // If a filter is active, ONLY keep zones that have valid bikes.
-      // If NO filter is active, keep EVERY zone (even empty ones).
+      // 3. The Smart Rule:
       if (isFilterActive ? validVehicles.isNotEmpty : true) {
         
-        // Create a copy of the zone and update its vehicle list
         Map<String, dynamic> updatedZone = Map<String, dynamic>.from(zone);
-        updatedZone['vehicles'] = validVehicles;
-        updatedZone['bikeCount'] = validVehicles.length; 
+        
+        // 🚨 ANOTHER FIX: If filter is inactive, put the ORIGINAL list back, not the filtered one
+        updatedZone['vehicles'] = isFilterActive ? validVehicles : allVehiclesInZone;
+        updatedZone['bikeCount'] = isFilterActive ? validVehicles.length : allVehiclesInZone.length; 
         
         filteredZones.add(updatedZone);
       }
