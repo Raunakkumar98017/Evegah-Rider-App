@@ -19,6 +19,9 @@ class MapDiscoveryScreen extends StatefulWidget {
   @override
   State<MapDiscoveryScreen> createState() => _MapDiscoveryScreenState();
 }
+// 🚨 ADD THESE FOR THE DISTANCE FILTER
+  double _selectedRadiusKm = 11.0; // Default to max 10km
+  Position? _currentUserPosition; // Stores their GPS location so we don't have to keep pinging it
 
 class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
@@ -69,6 +72,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   Future<void> _locateUserAndCheckZones() async {
     // 1. Get User Location quietly
     Position? userPos = await _getUserLocation();
+
+    // 🚨 NEW: Save it so the filter slider can use it!
+    if (userPos != null) {
+      _currentUserPosition = userPos; 
+    }
     
     // 2. If we got the location, change the map's starting point to HERE!
     if (userPos != null) {
@@ -366,11 +374,26 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   }
 
   // 🚨 UPDATED MAGIC SIEVE TO USE CLUSTER MANAGER
-  void _applyFilters() {
+  void _applyFilters({bool showAlert = false}) {
     List<Map<String, dynamic>> filteredZones = [];
     bool isFilterActive = _minBatteryLevel > 0;
 
     for (var zone in _allLiveZones) {
+      // 🚨 ADD THIS NEW DISTANCE CHECK
+    if (_currentUserPosition != null && _selectedRadiusKm < 11.0) {
+      final center = zone['center'] as LatLng?;
+      if (center != null) {
+        double dist = _calculateDistance(
+          _currentUserPosition!.latitude, _currentUserPosition!.longitude, 
+          center.latitude, center.longitude
+        );
+        
+        // If the distance is greater than what the user selected on the slider, skip this zone!
+        if (dist > _selectedRadiusKm) {
+          continue; 
+        }
+      }
+    }
       List<dynamic> allVehiclesInZone = zone['vehicles'] ?? [];
       
       List<dynamic> validVehicles = allVehiclesInZone.where((vehicle) {
@@ -399,6 +422,22 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       
       _clusterManager.setItems(_clusterItems);
     });
+    // Check if the map is empty AND if the button was clicked
+    if (showAlert) {
+      
+      // NOTE: Change '_markers.isEmpty' to whatever variable you use to 
+      // hold your map pins or filtered zones. 
+      bool isMapEmpty = _markers.isEmpty; 
+
+      if (isMapEmpty) {
+        // Wait 300 milliseconds for the Bottom Sheet to close before showing the alert
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            _showNoZonesAlert(context);
+          }
+        });
+      }
+    }
   }
 
    CameraPosition _initialCameraPosition = const CameraPosition(
@@ -557,9 +596,10 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                            ),
             ),
           ), 
-        ],
-      ),
+         ],
+        ),
     );
+      
   }
 
   void _showNoZonesAlert(BuildContext context) {
@@ -864,9 +904,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   }
 
   void _showFilterSheet(BuildContext context) {
+    // 1. Setup temporary variables for ALL filters so they only apply on button press
     String tempType = _selectedVehicleType;
     double tempBattery = _minBatteryLevel;
     double tempPrice = _maxPrice;
+    double tempRadius = _selectedRadiusKm; // 🚨 ADDED: Temp variable for distance
 
     showModalBottomSheet(
       context: context,
@@ -877,105 +919,145 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
               padding: const EdgeInsets.all(24),
-              height: MediaQuery.of(context).size.height * 0.60,
+              // Increased height slightly to give the UI room to breathe
+              height: MediaQuery.of(context).size.height * 0.65, 
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Filter Options", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E1452))),
-                      TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            tempType = "All";
-                            tempBattery = 0;
-                            tempPrice = 0.50;
-                          });
-                        },
-                        child: const Text("Clear All", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text("Vehicle Type", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    children: ["All", "Scooter", "E-Bike"].map((type) {
-                      final isSelected = tempType == type;
-                      return ChoiceChip(
-                        label: Text(type),
-                        selected: isSelected,
-                        selectedColor: const Color(0xFF1E1452),
-                        labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
-                        backgroundColor: Colors.grey.shade100,
-                        onSelected: (bool selected) {
-                          setModalState(() => tempType = type);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Minimum Battery", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text("${tempBattery.toInt()}%", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
-                    ],
-                  ),
-                  Slider(
-                    value: tempBattery,
-                    min: 0,
-                    max: 100,
-                    divisions: 10,
-                    activeColor: Colors.green,
-                    inactiveColor: Colors.green.shade100,
-                    onChanged: (value) => setModalState(() => tempBattery = value),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Max Fare/Min", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      Text("₹${tempPrice.toStringAsFixed(2)}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
-                    ],
-                  ),
-                  Slider(
-                    value: tempPrice,
-                    min: 0.10,
-                    max: 1.00,
-                    divisions: 18,
-                    activeColor: Colors.red,
-                    inactiveColor: Colors.red.shade100,
-                    onChanged: (value) => setModalState(() => tempPrice = value),
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedVehicleType = tempType;
-                          _minBatteryLevel = tempBattery;
-                          _maxPrice = tempPrice;
-                        });
-                        Navigator.pop(context); 
-                        _applyFilters();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E1452),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: const Text("Apply Filters", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+              // 🚨 ADDED: SingleChildScrollView prevents the yellow/black overflow stripes
+              child: SingleChildScrollView( 
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Filter Options", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E1452))),
+                        TextButton(
+                          onPressed: () {
+                            setModalState(() {
+                              tempType = "All";
+                              tempBattery = 0;
+                              tempPrice = 0.50;
+                              tempRadius = 11.0; // 🚨 Change this to 11.0
+                            });
+                          },
+                          child: const Text("Clear All", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        )
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    
+                    // --- VEHICLE TYPE ---
+                    const Text("Vehicle Type", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 12,
+                      children: ["All", "Scooter", "E-Bike"].map((type) {
+                        final isSelected = tempType == type;
+                        return ChoiceChip(
+                          label: Text(type),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFF1E1452),
+                          labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                          backgroundColor: Colors.grey.shade100,
+                          onSelected: (bool selected) {
+                            setModalState(() => tempType = type);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // --- 🚨 UPDATED DISTANCE SLIDER ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Maximum Walking Distance", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        // Show "Anywhere" if the slider is maxed out
+                        Text(
+                          tempRadius == 11.0 ? "Anywhere" : "${tempRadius.toInt()} km", 
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: tempRadius,
+                      min: 1.0,
+                      max: 11.0, // 🚨 Increased max to 11
+                      divisions: 10, // 🚨 Increased divisions to 10
+                      activeColor: Colors.blue,
+                      inactiveColor: Colors.blue.shade100,
+                      onChanged: (value) => setModalState(() => tempRadius = value),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // --- BATTERY SLIDER ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Minimum Battery", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text("${tempBattery.toInt()}%", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+                      ],
+                    ),
+                    Slider(
+                      value: tempBattery,
+                      min: 0,
+                      max: 100,
+                      divisions: 10,
+                      activeColor: Colors.green,
+                      inactiveColor: Colors.green.shade100,
+                      onChanged: (value) => setModalState(() => tempBattery = value),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // --- FARE SLIDER ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Max Fare/Min", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text("₹${tempPrice.toStringAsFixed(2)}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
+                      ],
+                    ),
+                    Slider(
+                      value: tempPrice,
+                      min: 0.10,
+                      max: 1.00,
+                      divisions: 18,
+                      activeColor: Colors.red,
+                      inactiveColor: Colors.red.shade100,
+                      onChanged: (value) => setModalState(() => tempPrice = value),
+                    ),
+                    
+                    const SizedBox(height: 30), // Replaced Spacer() with fixed spacing to fix overflow
+
+                    // --- APPLY BUTTON ---
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Save ALL temporary variables back to the main state
+                          setState(() {
+                            _selectedVehicleType = tempType;
+                            _minBatteryLevel = tempBattery;
+                            _maxPrice = tempPrice;
+                            _selectedRadiusKm = tempRadius; // 🚨 Save distance here!
+                          });
+                          Navigator.pop(context); 
+                          _applyFilters(showAlert: true); // Apply everything at once
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E1452),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text("Apply Filters", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
