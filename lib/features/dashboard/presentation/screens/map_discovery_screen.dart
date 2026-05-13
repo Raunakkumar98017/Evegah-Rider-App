@@ -8,7 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' hide ClusterManage
 import 'package:http/http.dart' as http;
 import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart'; // 🚨 ADDED CLUSTER PACKAGE
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:geolocator/geolocator.dart';
 import '../../../../core/services/session_service.dart';
 import '../screens/vehicle_details_screen.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -26,6 +26,91 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   
   BitmapDescriptor? _customZoneMarker;
   Timer? _refreshTimer;
+  bool _hasLocationPermission = false;
+  bool _isLocatingUser = true; 
+  
+  // 🚨 THE GPS ENGINE
+  Future<Position?> _getUserLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // 1. Check if GPS is turned on in the phone settings
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enable GPS services in your phone settings.')));
+      return null;
+    }
+
+    // 2. Check if the user has granted our app permission
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are denied.')));
+        return null;
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are permanently denied, we cannot request permissions.')));
+      return null;
+    } 
+
+    setState(() {
+      _hasLocationPermission = true;
+    });
+
+    // 3. If all checks pass, grab the coordinates!
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+// 🚨 AUTOMATIC STARTUP RADAR
+ // 🚨 UPDATED STARTUP RADAR
+  Future<void> _locateUserAndCheckZones() async {
+    // 1. Get User Location quietly
+    Position? userPos = await _getUserLocation();
+    
+    // 2. If we got the location, change the map's starting point to HERE!
+    if (userPos != null) {
+      _initialCameraPosition = CameraPosition(
+        target: LatLng(userPos.latitude, userPos.longitude),
+        zoom: 14.0, // Zoomed in perfectly on the user
+      );
+    }
+
+    // 3. Stop the loading screen and finally draw the map
+    if (mounted) {
+      setState(() {
+        _isLocatingUser = false;
+      });
+    }
+
+    if (userPos == null) return; // Stop here if GPS failed
+
+    // 4. Scan the 10km radius
+    bool hasNearbyZones = false;
+    double maxAllowedDistanceInKm = 10.0;
+
+    for (var zone in _allLiveZones) {
+      final center = zone['center'] as LatLng?;
+      if (center == null) continue;
+
+      double dist = _calculateDistance(
+        userPos.latitude, userPos.longitude, 
+        center.latitude, center.longitude
+      );
+
+      if (dist <= maxAllowedDistanceInKm) {
+        hasNearbyZones = true;
+        break; 
+      }
+    }
+
+    // 5. If they are far away, show the alert!
+    if (!hasNearbyZones && mounted) {
+      _showNoZonesAlert(context);
+    }
+  }
   
   // 🚨 FILTER STATE VARIABLES
   String _selectedVehicleType = "All";
@@ -43,6 +128,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     
     // 🚨 1. INITIALIZE CLUSTER MANAGER BEFORE LOADING DATA
     _clusterManager = _initClusterManager();
+
+    _locateUserAndCheckZones();
     
     _loadMapData(); 
     _startAutoRefreshEngine(); 
@@ -198,6 +285,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     } else {
       _allLiveZones = liveZones; 
       _applyFilters();
+      
     }
   }
 
@@ -313,7 +401,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     });
   }
 
-  final CameraPosition _initialCameraPosition = const CameraPosition(
+   CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(22.3072, 73.1812), 
     zoom: 12.0,
   );
@@ -322,7 +410,19 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA), 
-      body: Stack(
+      // 🚨 THE NEW CONDITIONAL BODY
+      body: _isLocatingUser 
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF1E1452)),
+                  SizedBox(height: 16),
+                  Text("Locating nearest bikes...", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                ],
+              ),
+            )
+      : Stack(
         children: [
           // A. THE MAP BASE
           GoogleMap(
@@ -337,6 +437,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             onCameraMove: _clusterManager.onCameraMove,
             onCameraIdle: _clusterManager.updateMap,
             zoomControlsEnabled: false,
+            myLocationEnabled: _hasLocationPermission, //THIS: Turns on the glowing blue dot!
             myLocationButtonEnabled: false,
             compassEnabled: false,
             mapToolbarEnabled: false,
@@ -374,13 +475,71 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             ),
           ),
           
-          /* C. SCAN BUTTON
+           // C. SCAN BUTTON
           Positioned(
             bottom: 24, left: 20, right: 20,
             child: SizedBox(
               height: 60, width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () { },
+              
+                child: ElevatedButton(
+                // 🚨 THE NEW ONPRESSED LOGIC
+                onPressed: () async { 
+                  // 1. Show a loading message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Locating nearest available bikes...'), duration: Duration(seconds: 2))
+                  );
+
+                  // 2. Ping GPS
+                  Position? userPos = await _getUserLocation();
+                  if (userPos == null) return; // Stop if GPS failed
+
+                  // 3. The Radar Sieve
+                  Map<String, dynamic>? closestZone;
+                  double minDistance = double.infinity;
+
+                  for (var zone in _allLiveZones) { // Use your master list
+                    // Skip zones with no bikes
+                    if (zone['vehicles']?.isEmpty ?? true) continue;
+
+                    final center = zone['center'] as LatLng?;
+                    if (center == null) continue;
+
+                    // Calculate distance from user to this zone
+                    double dist = _calculateDistance(
+                      userPos.latitude, userPos.longitude, 
+                      center.latitude, center.longitude
+                    );
+
+                    if (dist < minDistance) {
+                      minDistance = dist;
+                      closestZone = zone;
+                    }
+                  }
+
+                 // --- RADAR SIEVE FINISHES HERE ---
+
+                  // 🚨 THE REALITY CHECK: Define what "Nearby" actually means
+                  double maxAllowedDistanceInKm = 10.0; // 10 kilometers
+
+                  // 4. The Flight & Reveal (UPGRADED)
+                  // Check if we found a zone AND if it is actually close to the user
+                  if (closestZone != null && minDistance <= maxAllowedDistanceInKm) {
+                    final targetLatLng = closestZone['center'] as LatLng;
+                    final GoogleMapController controller = await _mapController.future;
+                    
+                    // Fly the camera to the zone
+                    await controller.animateCamera(CameraUpdate.newLatLngZoom(targetLatLng, 16.5));
+                    
+                    if (mounted) {
+                      _showZoneVehiclesSheet(context, closestZone);
+                    }
+                  } else {
+                    // 🚨 Trigger your custom pop-up dialog instead of the SnackBar!
+                    if (mounted) {
+                      _showNoZonesAlert(context);
+                    }
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E1452), 
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
@@ -389,14 +548,15 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.qr_code_scanner, color: Colors.white),
+                    // 🚨 UPDATE THE TEXT AND ICON
+                    Icon(Icons.near_me, color: Colors.white),
                     SizedBox(width: 10),
-                    Text("Scan", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                    Text("Find Nearby", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
-              ),
+                           ),
             ),
-          ), */
+          ), 
         ],
       ),
     );
@@ -859,6 +1019,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         currentCenter.latitude, currentCenter.longitude,
         center.latitude, center.longitude
       );
+
+     
 
       // Must be within walking distance (e.g., 1.5 km)
       if (distanceKm <= 10) {

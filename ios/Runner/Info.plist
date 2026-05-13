@@ -2,6 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+     <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to show you the nearest available eVegah bikes.</string>
+	
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -68,5 +71,6 @@
 	</array>
 	<key>MAPS_API_KEY</key>
 <string>$(MAPS_API_KEY)</string>
+
 </dict>
 </plist>
