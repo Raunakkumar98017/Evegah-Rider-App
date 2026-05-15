@@ -1,134 +1,567 @@
 import 'package:flutter/material.dart';
 import 'map_discovery_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+import '../../../auth/presentation/screens/create_profile_screen.dart';
+import '../../../unlock/presentation/screens/bluetooth_unlock_screen.dart';
+import '../../../unlock/presentation/screens/scan_qr_screen.dart';
+
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() =>
+      _DashboardScreenState();
+}
+
+class _DashboardScreenState
+    extends State<DashboardScreen> {
+
+  int selectedIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor:
+          const Color(0xFFF8FAFC),
 
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          "EVegah Dashboard",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
 
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Welcome Rider 👋",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Your EV journey starts now.",
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-            const SizedBox(height: 30),
+          padding: EdgeInsets.only(
+            left: 22,
+            right: 22,
+            top: 18,
+            bottom:
+                MediaQuery.of(context)
+                    .padding
+                    .bottom +
+                120,
+          ),
 
-            // CARD
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green.shade400, Colors.green.shade700],
-                ),
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: const Row(
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+
+            children: [
+
+              // TOP BAR
+              Row(
+                mainAxisAlignment:
+                    MainAxisAlignment
+                        .spaceBetween,
+
                 children: [
-                  Icon(Icons.electric_bike, color: Colors.white, size: 50),
-                  SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Ready To Ride ⚡",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+
+                  Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .start,
+
+                    children: const [
+
+                      Text(
+                        "⚡ EVegah Rider",
+
+                        style: TextStyle(
+                          color:
+                              Color(0xFF111827),
+
+                          fontSize: 30,
+
+                          fontWeight:
+                              FontWeight.w800,
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          "Find nearby EV vehicles and start your smart ride.",
-                          style: TextStyle(color: Colors.white70),
+                      ),
+
+                      SizedBox(height: 6),
+
+                      Text(
+                        "Ride Smart. Ride Green.",
+
+                        style: TextStyle(
+                          color:
+                              Colors.grey,
+
+                          fontSize: 15,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+
+                  GestureDetector(
+                    onTap: () {
+
+                      Navigator.push(
+                        context,
+
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const CreateProfileScreen(),
+                        ),
+                      );
+                    },
+
+                    child: Container(
+                      padding:
+                          const EdgeInsets.all(
+                        3,
+                      ),
+
+                      decoration: BoxDecoration(
+                        shape:
+                            BoxShape.circle,
+
+                        gradient:
+                            LinearGradient(
+                          colors: [
+                            Colors.green
+                                .shade400,
+
+                            Colors.purple
+                                .shade300,
+                          ],
+                        ),
+                      ),
+
+                      child: const CircleAvatar(
+                        radius: 27,
+
+                        backgroundColor:
+                            Colors.white,
+
+                        child: Icon(
+                          Icons.person,
+
+                          color:
+                              Color(0xFF22C55E),
+
+                          size: 30,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 30),
 
-            // QUICK ACTIONS
-            const Text(
-              "Quick Actions",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                // 1. We pass the Navigator.push function into the Find EV card
-                buildActionCard(
-                  icon: Icons.map, 
-                  title: "Find EV", 
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MapDiscoveryScreen(),
+              const SizedBox(height: 30),
+
+              // HERO CARD
+              Container(
+                width: double.infinity,
+
+                padding:
+                    const EdgeInsets.all(
+                  28,
+                ),
+
+                decoration: BoxDecoration(
+                  borderRadius:
+                      BorderRadius.circular(
+                    34,
+                  ),
+
+                  gradient:
+                      LinearGradient(
+                    begin: Alignment.topLeft,
+                    end:
+                        Alignment.bottomRight,
+
+                    colors: [
+                      Colors.green
+                          .shade400,
+
+                      Colors.green
+                          .shade500,
+
+                      Colors.purple
+                          .shade400,
+                    ],
+                  ),
+
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          Colors.green
+                              .withOpacity(
+                        0.22,
                       ),
-                    );
-                  }
+
+                      blurRadius: 28,
+
+                      offset:
+                          const Offset(0, 12),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                
-                // 2. Scan Ride gets an empty function for now until you build that screen
-                buildActionCard(
-                  icon: Icons.qr_code_scanner, 
-                  title: "Scan Ride", 
-                  onTap: () {
-                    // Do nothing for now
-                  }
+
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment
+                          .start,
+
+                  children: [
+
+                    Row(
+                      children: const [
+
+                        Icon(
+                          Icons.electric_bike,
+
+                          color:
+                              Colors.white,
+
+                          size: 44,
+                        ),
+
+                        SizedBox(width: 16),
+
+                        Expanded(
+                          child: Text(
+                            "Welcome Back 🚀",
+
+                            style: TextStyle(
+                              color:
+                                  Colors.white,
+
+                              fontSize: 28,
+
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment
+                              .spaceBetween,
+
+                      children: [
+
+                        buildHeroStat(
+                          "23",
+                          "Nearby EVs",
+                        ),
+
+                        buildHeroStat(
+                          "12.4kg",
+                          "CO₂ Saved",
+                        ),
+
+                        buildHeroStat(
+                          "87%",
+                          "Battery",
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+
+              const SizedBox(height: 34),
+
+              const Text(
+                "Quick Actions",
+
+                style: TextStyle(
+                  color:
+                      Color(0xFF111827),
+
+                  fontSize: 26,
+
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              GridView.count(
+                physics:
+                    const NeverScrollableScrollPhysics(),
+
+                shrinkWrap: true,
+
+                crossAxisCount: 2,
+
+                crossAxisSpacing: 18,
+                mainAxisSpacing: 18,
+
+                childAspectRatio: 0.90,
+
+                children: [
+
+                  buildActionCard(
+                    context,
+
+                    icon:
+                        Icons.qr_code_scanner_rounded,
+
+                    title:
+                        "Scan EV",
+
+                    subtitle:
+                        "Unlock instantly",
+
+                    color:
+                        Colors.green,
+
+                    bg:
+                        Colors.green.shade50,
+
+                    onTap: () {
+
+                      Navigator.push(
+                        context,
+
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const ScanQrScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  buildActionCard(
+                    context,
+
+                    icon:
+                        Icons.bluetooth_rounded,
+
+                    title:
+                        "Bluetooth",
+
+                    subtitle:
+                        "Nearby unlock",
+
+                    color:
+                        Colors.purple,
+
+                    bg:
+                        Colors.purple.shade50,
+
+                    onTap: () {
+
+                      Navigator.push(
+                        context,
+
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const BluetoothUnlockScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  buildActionCard(
+                    context,
+
+                    icon:
+                        Icons.map_rounded,
+
+                    title:
+                        "Smart Maps",
+
+                    subtitle:
+                        "Nearby rides",
+
+                    color:
+                        Colors.orange,
+
+                    bg:
+                        Colors.orange.shade50,
+
+                    onTap: () {
+
+                      Navigator.push(
+                        context,
+
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const MapDiscoveryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  buildActionCard(
+                    context,
+
+                    icon:
+                        Icons.history_rounded,
+
+                    title:
+                        "Ride History",
+
+                    subtitle:
+                        "Past trips",
+
+                    color:
+                        Colors.blue,
+
+                    bg:
+                        Colors.blue.shade50,
+
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // 3. We updated this method to accept an onTap function and wrapped the Container in a GestureDetector
-  Widget buildActionCard({required IconData icon, required String title, required VoidCallback onTap}) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap, // This triggers the navigation
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
+  Widget buildHeroStat(
+    String value,
+    String label,
+  ) {
+
+    return Column(
+      children: [
+
+        Text(
+          value,
+
+          style: const TextStyle(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+
+            fontSize: 24,
+
+            fontWeight:
+                FontWeight.bold,
           ),
-          child: Column(
-            children: [
-              Icon(icon, size: 40, color: Colors.green),
-              const SizedBox(height: 16),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            ],
+        ),
+
+        const SizedBox(height: 6),
+
+        Text(
+          label,
+
+          style: const TextStyle(
+            color: Colors.white70,
+
+            fontSize: 14,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildActionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required Color bg,
+    required VoidCallback onTap,
+  }) {
+
+    return GestureDetector(
+      onTap: onTap,
+
+      child: Container(
+        padding:
+            const EdgeInsets.all(
+          18,
+        ),
+
+        decoration: BoxDecoration(
+          color: bg,
+
+          borderRadius:
+              BorderRadius.circular(
+            30,
+          ),
+
+          boxShadow: [
+            BoxShadow(
+              color:
+                  Colors.black
+                      .withOpacity(
+                0.03,
+              ),
+
+              blurRadius: 14,
+            ),
+          ],
+        ),
+
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+
+          children: [
+
+            Container(
+              padding:
+                  const EdgeInsets.all(
+                16,
+              ),
+
+              decoration: BoxDecoration(
+                color: Colors.white,
+
+                borderRadius:
+                    BorderRadius.circular(
+                  22,
+                ),
+              ),
+
+              child: Icon(
+                icon,
+
+                color: color,
+
+                size: 34,
+              ),
+            ),
+
+            const Spacer(),
+
+            Text(
+              title,
+
+              maxLines: 1,
+
+              overflow:
+                  TextOverflow.ellipsis,
+
+              style: const TextStyle(
+                color:
+                    Color(0xFF111827),
+
+                fontSize: 18,
+
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              subtitle,
+
+              maxLines: 2,
+
+              overflow:
+                  TextOverflow.ellipsis,
+
+              style: const TextStyle(
+                color: Colors.grey,
+
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     );
