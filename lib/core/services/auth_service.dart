@@ -13,22 +13,37 @@ class AuthService {
   String accessToken = "";
 
   // CHECK MOBILE NUMBER
+ // CHECK MOBILE NUMBER
   Future<bool> checkMobileNumber(String mobileNumber) async {
     final url = Uri.parse("${baseUrl}CheckCustomerMobileNumber");
 
+    print("🚀 CALLING CHECK MOBILE API...");
+
     final response = await http.post(
       url,
-
       headers: {"Content-Type": "application/json"},
-
       body: jsonEncode({"mobileNumber": mobileNumber}),
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+    print("🚀 CHECK MOBILE STATUS: ${response.statusCode}");
+    print("🚀 CHECK MOBILE RESPONSE: ${response.body}"); // <-- This will show us the truth!
 
-      accessToken =
-          data["access_token"] ?? data["accessToken"] ?? data["token"] ?? "";
+    if (response.statusCode == 200) {
+      final decodedResponse = jsonDecode(response.body);
+
+      String token = "";
+
+      // We check if "data" exists, and if it's a List, we grab the first item [0]
+      if (decodedResponse["data"] != null && decodedResponse["data"] is List && decodedResponse["data"].isNotEmpty) {
+         token = decodedResponse["data"][0]["access_token"] ?? "";
+      } 
+      // Fallback just in case the server changes format later
+      else if (decodedResponse["access_token"] != null) {
+         token = decodedResponse["access_token"];
+      }
+
+      accessToken = token;
+      print("🚀 EXTRACTED TOKEN: '$accessToken'");
 
       return true;
     }

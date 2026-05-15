@@ -1,7 +1,11 @@
 class AppConstants {
   // Network Configurations
-  static const String apiBaseUrl = 'https://api.evegah.com/api/v1'; // Change as per environment
+  static const String apiBaseUrl = 'https://admin.evegah.com/api/'; // Change as per environment
   static const String websocketUrl = 'wss://api.evegah.com/ws';
+  // Vehicle & Map API Endpoints
+  static const String getLiveZones = 'https://admin.evegah.com/api/v1/getzoneDetailWithBikeCountList';
+  static const String decryptQr = 'https://admin.evegah.com/api/qrDecrypted';
+  static const String getVehicleModel = 'https://admin.evegah.com/api/v1/getVehicleModel';
 
   // Secure Storage & Shared Preference Keys
   static const String keyAccessToken = 'access_token';
