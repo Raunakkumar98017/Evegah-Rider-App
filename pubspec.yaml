@@ -17,6 +17,9 @@ dependencies:
   shared_preferences: ^2.2.3
   file_picker: ^8.0.0+1
   image_picker: ^1.1.2
+  mobile_scanner: ^5.1.1
+  flutter_blue_plus: ^1.32.8
+  geolocator: ^11.0.0
 
 dev_dependencies:
   flutter_test:
