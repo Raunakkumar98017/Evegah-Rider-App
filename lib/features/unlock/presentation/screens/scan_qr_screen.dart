@@ -270,96 +270,73 @@ class _ScanQrScreenState extends State<ScanQrScreen>
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
-
                           backgroundColor: Colors.white,
-
+                          isScrollControlled: true, // 🚨 1. ADD THIS: Allows the sheet to move up
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
                               top: Radius.circular(28),
                             ),
                           ),
-
                           builder: (context) {
-                            TextEditingController vehicleController =
-                                TextEditingController();
+                            TextEditingController vehicleController = TextEditingController();
 
+                            // 🚨 2. ADD THIS PADDING WRAPPER: Pushes the sheet above the keyboard
                             return Padding(
-                              padding: const EdgeInsets.all(24),
-
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-
-                                children: [
-                                  const Text(
-                                    "Enter Vehicle ID",
-
-                                    style: TextStyle(
-                                      fontSize: 22,
-
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 20),
-
-                                  TextField(
-                                    controller: vehicleController,
-
-                                    decoration: InputDecoration(
-                                      hintText: "EV123",
-
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(18),
+                              padding: EdgeInsets.only(
+                                bottom: MediaQuery.of(context).viewInsets.bottom,
+                              ),
+                              child: SingleChildScrollView( // 🚨 3. ADD THIS: Makes the content safe to compress
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        "Enter Vehicle ID",
+                                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                                       ),
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 24),
-
-                                  SizedBox(
-                                    width: double.infinity,
-
-                                    height: 56,
-
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-
-                                        Navigator.push(
-                                          context,
-
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                UnlockingScreen(
-                                                  vehicleId:
-                                                      vehicleController.text,
+                                      const SizedBox(height: 20),
+                                      TextField(
+                                        controller: vehicleController,
+                                        autofocus: true, // Optional: Automatically opens keyboard
+                                        decoration: InputDecoration(
+                                          hintText: "EV123",
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(18),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 56,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => UnlockingScreen(
+                                                  vehicleId: vehicleController.text,
                                                 ),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(18),
+                                            ),
                                           ),
-                                        );
-                                      },
-
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green,
-
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            18,
+                                          child: const Text(
+                                            "Unlock Vehicle",
+                                            style: TextStyle(color: Colors.white, fontSize: 18),
                                           ),
                                         ),
                                       ),
-
-                                      child: const Text(
-                                        "Unlock Vehicle",
-
-                                        style: TextStyle(
-                                          color: Colors.white,
-
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             );
                           },
