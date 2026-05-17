@@ -1,4 +1,5 @@
 name: evegah_rider_app
+
 description: "eVegah Rider App - Find and ride electric bikes near you."
 
 publish_to: 'none'
@@ -13,32 +14,40 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+
+  # NETWORK
   http: ^1.6.0
+
+  # STORAGE
   shared_preferences: ^2.2.3
+
+  # FILES & IMAGES
   file_picker: ^8.0.0+1
   image_picker: ^1.1.2
+
+  # QR SCANNER
   mobile_scanner: ^5.1.1
+
+  # BLUETOOTH
   flutter_blue_plus: ^1.32.8
+
+  # URL LAUNCHER
   url_launcher: ^6.3.0
 
-  # ═══════════════════════════════════════════════
   # LOCATION SERVICES
-  # ═══════════════════════════════════════════════
   geolocator: ^11.0.0
 
-  # ═══════════════════════════════════════════════
-  # GOOGLE MAPS — Native + Web
-  # ═══════════════════════════════════════════════
+  # GOOGLE MAPS
   google_maps_flutter: ^2.6.0
   google_maps_flutter_web: ^0.5.7
 
-  # Cluster manager from GitHub (bug-fixed version)
+  # CLUSTER MANAGER
   google_maps_cluster_manager:
     git:
       url: https://github.com/bpillon/google_maps_cluster_manager.git
       ref: master
 
-dev_dependencies: 
+dev_dependencies:
   flutter_test:
     sdk: flutter
 
@@ -46,5 +55,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/

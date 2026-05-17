@@ -92,129 +92,109 @@ class _OtpScreenState extends State<OtpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(backgroundColor: Colors.white, elevation: 0),
+      // 🚨 1. This tells the Scaffold to resize when the keyboard opens
+      resizeToAvoidBottomInset: true, 
 
       body: Center(
         child: SizedBox(
           width: 400,
+          child: Column(
+            children: [
+              // 🚨 2. EXPANDED + SCROLLVIEW: This area will shrink and scroll when the keyboard pops up!
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      const Text(
+                        "OTP Verification",
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        "Enter OTP sent to your phone",
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                      const SizedBox(height: 40),
 
-          child: Padding(
-            padding: const EdgeInsets.all(24),
+                      // OTP FIELD
+                      TextField(
+                        controller: otpController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: "Enter OTP",
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 18,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
 
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+                      // ERROR MESSAGE
+                      Text(errorMessage, style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 20),
 
-              children: [
-                const SizedBox(height: 40),
-
-                const Text(
-                  "OTP Verification",
-
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 10),
-
-                const Text(
-                  "Enter OTP sent to your phone",
-
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-
-                const SizedBox(height: 40),
-
-                // OTP FIELD
-                TextField(
-                  controller: otpController,
-
-                  keyboardType: TextInputType.number,
-
-                  decoration: InputDecoration(
-                    hintText: "Enter OTP",
-
-                    filled: true,
-
-                    fillColor: Colors.grey.shade100,
-
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-
-                      borderSide: BorderSide.none,
-                    ),
-
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
+                      // RESEND TIMER
+                      Center(
+                        child: seconds == 0
+                            ? TextButton(
+                                onPressed: () async {
+                                  setState(() {
+                                    seconds = 30;
+                                  });
+                                  await widget.authService.sendOtp("");
+                                  startTimer();
+                                },
+                                child: const Text("Resend OTP"),
+                              )
+                            : Text(
+                                "Resend OTP in 00:$seconds",
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 10),
-
-                Text(errorMessage, style: const TextStyle(color: Colors.red)),
-
-                const SizedBox(height: 20),
-
-                // RESEND TIMER
-                Center(
-                  child: seconds == 0
-                      ? TextButton(
-                          onPressed: () async {
-                            setState(() {
-                              seconds = 30;
-                            });
-
-                            await widget.authService.sendOtp("");
-
-                            startTimer();
-                          },
-
-                          child: const Text("Resend OTP"),
-                        )
-                      : Text(
-                          "Resend OTP in 00:$seconds",
-
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // VERIFY BUTTON
-                SizedBox(
+              // 🚨 3. PINNED BUTTON: This stays outside the scroll view so the keyboard smoothly pushes it up!
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: SizedBox(
                   width: double.infinity,
-
                   height: 58,
-
                   child: ElevatedButton(
                     onPressed: isLoading ? null : verifyOtp,
-
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
                       ),
                     ),
-
                     child: isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
                             "Verify OTP",
-
                             style: TextStyle(
                               fontSize: 18,
-
                               color: Colors.white,
-
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
