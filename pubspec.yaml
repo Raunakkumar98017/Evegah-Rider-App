@@ -1,5 +1,5 @@
 name: evegah_rider_app
-description: "A new Flutter project."
+description: "eVegah Rider App - Find and ride electric bikes near you."
 
 publish_to: 'none'
 
@@ -19,22 +19,24 @@ dependencies:
   image_picker: ^1.1.2
   mobile_scanner: ^5.1.1
   flutter_blue_plus: ^1.32.8
-  geolocator: ^11.0.0
-
   url_launcher: ^6.3.0
 
+  # ═══════════════════════════════════════════════
+  # LOCATION SERVICES
+  # ═══════════════════════════════════════════════
   geolocator: ^11.0.0
-  
-  # 🚨 Let Flutter use the newest, safest Google Maps
+
+  # ═══════════════════════════════════════════════
+  # GOOGLE MAPS — Native + Web
+  # ═══════════════════════════════════════════════
   google_maps_flutter: ^2.6.0
-  
-  # 🚨 THE ULTIMATE FIX: Download the bug-free code straight from GitHub
+  google_maps_flutter_web: ^0.5.7
+
+  # Cluster manager from GitHub (bug-fixed version)
   google_maps_cluster_manager:
     git:
       url: https://github.com/bpillon/google_maps_cluster_manager.git
       ref: master
-
-  
 
 dev_dependencies: 
   flutter_test:

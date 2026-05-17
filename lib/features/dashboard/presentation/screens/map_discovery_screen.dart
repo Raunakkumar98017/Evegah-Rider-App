@@ -19,52 +19,71 @@ class MapDiscoveryScreen extends StatefulWidget {
   @override
   State<MapDiscoveryScreen> createState() => _MapDiscoveryScreenState();
 }
-// 🚨 ADD THESE FOR THE DISTANCE FILTER
-  double _selectedRadiusKm = 11.0; // Default to max 10km
-  Position? _currentUserPosition; // Stores their GPS location so we don't have to keep pinging it
 
 class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
-  final Completer<GoogleMapController> _mapController = Completer();
+  // 🚨 DISTANCE FILTER VARIABLES
+  double _selectedRadiusKm = 11.0; // Default to max 10km
+  Position? _currentUserPosition; // Stores their GPS location so we don't have to keep pinging it
+  GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   
   BitmapDescriptor? _customZoneMarker;
   Timer? _refreshTimer;
   bool _hasLocationPermission = false;
-  bool _isLocatingUser = true; 
+  bool _isLocatingUser = true;
+  bool _mapReady = false;
   
   // 🚨 THE GPS ENGINE
   Future<Position?> _getUserLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    try {
+      bool serviceEnabled;
+      LocationPermission permission;
 
-    // 1. Check if GPS is turned on in the phone settings
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enable GPS services in your phone settings.')));
-      return null;
-    }
-
-    // 2. Check if the user has granted our app permission
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are denied.')));
+      // 1. Check if GPS is turned on in the phone settings
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enable GPS services in your phone settings.')));
+        }
         return null;
       }
-    }
-    
-    if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are permanently denied, we cannot request permissions.')));
+
+      // 2. Check if the user has granted our app permission
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are denied.')));
+          }
+          return null;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are permanently denied, we cannot request permissions.')));
+        }
+        return null;
+      } 
+
+      if (mounted) {
+        setState(() {
+          _hasLocationPermission = true;
+        });
+      }
+
+      // 3. If all checks pass, grab the coordinates with timeout!
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low),
+      );
+    } catch (e) {
+      debugPrint('GPS Error: $e');
       return null;
-    } 
-
-    setState(() {
-      _hasLocationPermission = true;
-    });
-
-    // 3. If all checks pass, grab the coordinates!
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    }
   }
 
 // 🚨 AUTOMATIC STARTUP RADAR
@@ -137,15 +156,28 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     // 🚨 1. INITIALIZE CLUSTER MANAGER BEFORE LOADING DATA
     _clusterManager = _initClusterManager();
 
-    _locateUserAndCheckZones();
-    
-    _loadMapData(); 
+    // 🚨 SEQUENTIAL STARTUP: Load data first, then locate user
+    _startupSequence();
     _startAutoRefreshEngine(); 
+  }
+
+  Future<void> _startupSequence() async {
+    // Load map data first so zones are ready when we check location
+    await _loadMapData();
+    // Then locate user and check zones against loaded data
+    await _locateUserAndCheckZones();
+    // After location is known, move camera to user position
+    if (_currentUserPosition != null && _mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(_initialCameraPosition),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel(); 
+    _refreshTimer?.cancel();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -173,7 +205,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         
         // --- THE NEW SMART ZOOM LOGIC ---
         if (cluster.isMultiple) {
-          final GoogleMapController controller = await _mapController.future;
+          final GoogleMapController? controller = _mapController;
+          if (controller == null) return;
 
           // 1. Find the edges of the hidden pins
           double minLat = cluster.items.first.location.latitude;
@@ -279,7 +312,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         size: 130 
       );
     } catch (e) {
-      debugPrint("Error loading custom icon: $e");
+      debugPrint("Error loading custom icon, using default marker: $e");
+      _customZoneMarker = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
     }
 
     setState(() => _markers = {});
@@ -468,9 +502,16 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             initialCameraPosition: _initialCameraPosition,
             markers: _markers,
             onMapCreated: (GoogleMapController controller) {
-              _mapController.complete(controller);
+              _mapController = controller;
               // 🚨 LINK MANAGER TO THE MAP
               _clusterManager.setMapId(controller.mapId);
+              // Trigger cluster update after map is ready
+              if (_clusterItems.isNotEmpty) {
+                _clusterManager.setItems(_clusterItems);
+              }
+              if (mounted) {
+                setState(() => _mapReady = true);
+              }
             },
             // 🚨 ADD THESE TWO LINES FOR CLUSTERING
             onCameraMove: _clusterManager.onCameraMove,
@@ -564,10 +605,12 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                   // Check if we found a zone AND if it is actually close to the user
                   if (closestZone != null && minDistance <= maxAllowedDistanceInKm) {
                     final targetLatLng = closestZone['center'] as LatLng;
-                    final GoogleMapController controller = await _mapController.future;
+                    final GoogleMapController? controller = _mapController;
                     
                     // Fly the camera to the zone
-                    await controller.animateCamera(CameraUpdate.newLatLngZoom(targetLatLng, 16.5));
+                    if (controller != null) {
+                      await controller.animateCamera(CameraUpdate.newLatLngZoom(targetLatLng, 16.5));
+                    }
                     
                     if (mounted) {
                       _showZoneVehiclesSheet(context, closestZone);
@@ -596,6 +639,21 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                            ),
             ),
           ), 
+          // D. MAP LOADING OVERLAY
+          if (!_mapReady)
+            Container(
+              color: const Color(0xFFF5F6FA),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFF1E1452)),
+                    SizedBox(height: 16),
+                    Text("Loading map...", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  ],
+                ),
+              ),
+            ),
          ],
         ),
     );
@@ -607,8 +665,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => false, 
+        return PopScope(
+          canPop: false, 
           child: Dialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Container(
@@ -742,7 +800,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           Builder(
                             builder: (context) {
                               bool isEmptyZone = zoneVehicles.isEmpty;
-                              bool isHighDemand = zoneVehicles.length > 0 && zoneVehicles.length <= 2;
+                              bool isHighDemand = zoneVehicles.isNotEmpty && zoneVehicles.length <= 2;
                               
                               Map<String, dynamic>? alternativeZone;
                               if (isEmptyZone || isHighDemand) {
@@ -1118,6 +1176,17 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     validAlternatives.sort((a, b) => (a['temp_distance'] as double).compareTo(b['temp_distance'] as double));
     return validAlternatives.first;
   }
+
+  // 🚨 DISTANCE CALCULATOR (Haversine formula)
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    var p = 0.017453292519943295;
+    var a = 0.5 -
+        math.cos((lat2 - lat1) * p) / 2 +
+        math.cos(lat1 * p) *
+            math.cos(lat2 * p) *
+            (1 - math.cos((lon2 - lon1) * p)) / 2;
+    return 12742 * math.asin(math.sqrt(a));
+  }
 }
 
 // 🚨 Place this at the very bottom of the file, outside of the main class!
@@ -1135,10 +1204,3 @@ class ZonePlace with ClusterItem {
   @override
   LatLng get location => latLng;
 }
-// 🚨 NEW: Returns distance in Kilometers using the Haversine formula
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    var p = 0.017453292519943295; // Math.PI / 180
-    var a = 0.5 - math.cos((lat2 - lat1) * p)/2 + 
-            math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p))/2;
-    return 12742 * math.asin(math.sqrt(a)); // Earth radius is 6371 km
-  }

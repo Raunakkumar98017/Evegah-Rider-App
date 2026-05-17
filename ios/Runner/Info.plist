@@ -2,15 +2,25 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need your location to show you the nearest available eVegah bikes.</string>
-	
+	<!-- ═══════════════════════════════════════════════ -->
+	<!-- LOCATION PERMISSIONS                            -->
+	<!-- ═══════════════════════════════════════════════ -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to show you the nearest available eVegah bikes.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to track your ride and show nearby vehicles.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need your location to track your ride in the background.</string>
+
+	<!-- ═══════════════════════════════════════════════ -->
+	<!-- APP CONFIGURATION                               -->
+	<!-- ═══════════════════════════════════════════════ -->
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Evegah Rider App</string>
+	<string>eVegah Rider</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -29,6 +39,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+
+	<!-- ═══════════════════════════════════════════════ -->
+	<!-- SCENE CONFIGURATION                             -->
+	<!-- ═══════════════════════════════════════════════ -->
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -50,6 +64,10 @@
 			</array>
 		</dict>
 	</dict>
+
+	<!-- ═══════════════════════════════════════════════ -->
+	<!-- UI CONFIGURATION                                -->
+	<!-- ═══════════════════════════════════════════════ -->
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -69,8 +87,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>MAPS_API_KEY</key>
-<string>$(MAPS_API_KEY)</string>
 
+	<!-- ═══════════════════════════════════════════════ -->
+	<!-- URL SCHEMES FOR NAVIGATION (url_launcher)       -->
+	<!-- ═══════════════════════════════════════════════ -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>comgooglemaps</string>
+	</array>
 </dict>
 </plist>
