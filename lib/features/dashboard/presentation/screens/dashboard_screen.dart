@@ -4,6 +4,7 @@ import 'map_discovery_screen.dart';
 import '../../../auth/presentation/screens/create_profile_screen.dart';
 import '../../../unlock/presentation/screens/bluetooth_unlock_screen.dart';
 import '../../../unlock/presentation/screens/scan_qr_screen.dart';
+import '/features/unlock/presentation/screens/ride_history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -175,7 +176,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     subtitle: "Past trips",
                     color: Colors.blue,
                     bg: Colors.blue.shade50,
-                    onTap: () {},
+                    onTap: () {
+
+                      // 🚨 NEXT STEP: Navigate to Ride History Screen!
+                     Navigator.push(
+                     context,
+                      MaterialPageRoute(builder: (context) => const RideHistoryScreen()),
+                    );
+                    },
                   ),
                 ],
               ),
