@@ -36,6 +36,10 @@ dependencies:
 
   # LOCATION SERVICES
   geolocator: ^11.0.0
+ 
+  #pdf generation
+  pdf: ^3.10.8
+  printing: ^5.11.1
 
   # GOOGLE MAPS
   google_maps_flutter: ^2.6.0
