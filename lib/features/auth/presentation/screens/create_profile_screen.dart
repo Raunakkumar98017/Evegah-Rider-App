@@ -40,15 +40,15 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   void initState() {
     super.initState();
 
-    // DUMMY EXISTING DATA
-    nameController.text = "Moksh Patel";
+    // EMPTY PROFESSIONAL PROFILE
+    nameController.text = "";
 
-    emailController.text = "moksh@gmail.com";
+    emailController.text = "";
 
-    emergencyController.text = "9876543210";
+    emergencyController.text = "";
   }
 
-  // PROFILE IMAGE PICKER
+  // PICK PROFILE IMAGE
   Future<void> pickProfileImage() async {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
@@ -61,21 +61,21 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
   // VALIDATION
   bool validateFields() {
-    // EMPTY VALIDATION
+    // NAME
     if (nameController.text.trim().isEmpty) {
-      showError("Please enter name");
+      showError("Please enter your full name");
 
       return false;
     }
 
-    // EMAIL VALIDATION
+    // EMAIL
     if (!emailController.text.contains("@")) {
-      showError("Enter valid email");
+      showError("Enter a valid email address");
 
       return false;
     }
 
-    // PHONE VALIDATION
+    // PHONE
     if (emergencyController.text.length < 10) {
       showError("Enter valid phone number");
 
@@ -119,7 +119,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                         children: [
                           Text(
-                            "Edit Profile",
+                            "Create Profile",
 
                             style: TextStyle(
                               fontSize: 32,
@@ -131,7 +131,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                           SizedBox(height: 6),
 
                           Text(
-                            "Update your EV rider profile",
+                            "Setup your EV rider profile",
 
                             style: TextStyle(color: Colors.grey, fontSize: 16),
                           ),
@@ -145,16 +145,24 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                           color: Colors.white,
 
                           borderRadius: BorderRadius.circular(18),
+
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+
+                              blurRadius: 12,
+                            ),
+                          ],
                         ),
 
-                        child: const Icon(Icons.edit, color: Colors.green),
+                        child: const Icon(Icons.person, color: Colors.green),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 30),
 
-                  // PROGRESS CARD
+                  // PROFILE COMPLETION
                   Container(
                     padding: const EdgeInsets.all(20),
 
@@ -183,10 +191,10 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                             ),
 
                             Text(
-                              "85%",
+                              "0%",
 
                               style: TextStyle(
-                                color: Colors.green,
+                                color: Colors.orange,
 
                                 fontWeight: FontWeight.bold,
                               ),
@@ -200,7 +208,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                           borderRadius: BorderRadius.circular(20),
 
                           child: LinearProgressIndicator(
-                            value: 0.85,
+                            value: 0.0,
 
                             minHeight: 10,
 
@@ -220,8 +228,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     child: Stack(
                       children: [
                         Container(
-                          height: 120,
-                          width: 120,
+                          height: 130,
+                          width: 130,
 
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -229,6 +237,14 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                             shape: BoxShape.circle,
 
                             border: Border.all(color: Colors.green, width: 3),
+
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+
+                                blurRadius: 20,
+                              ),
+                            ],
                           ),
 
                           child: profileImage != null
@@ -237,16 +253,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                                     profileImage!,
 
                                     fit: BoxFit.cover,
-
-                                    width: 120,
-
-                                    height: 120,
                                   ),
                                 )
                               : const Icon(
                                   Icons.person,
 
-                                  size: 60,
+                                  size: 65,
 
                                   color: Colors.grey,
                                 ),
@@ -260,7 +272,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                             onTap: pickProfileImage,
 
                             child: Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
 
                               decoration: const BoxDecoration(
                                 color: Colors.green,
@@ -271,7 +283,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                               child: const Icon(
                                 Icons.camera_alt,
 
-                                size: 20,
+                                size: 22,
 
                                 color: Colors.white,
                               ),
@@ -284,7 +296,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                   const SizedBox(height: 40),
 
-                  // PERSONAL INFO
+                  // PERSONAL INFO CARD
                   Container(
                     padding: const EdgeInsets.all(20),
 
@@ -319,7 +331,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                         const SizedBox(height: 20),
 
                         buildTextField(
-                          hint: "Emergency Contact",
+                          hint: "Phone Number",
 
                           icon: Icons.phone_outlined,
 
@@ -337,7 +349,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   const Text(
                     "Select Rider Type",
 
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 20),
@@ -356,11 +368,13 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                           });
                         },
 
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
 
-                            vertical: 14,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+
+                            vertical: 15,
                           ),
 
                           decoration: BoxDecoration(
@@ -373,6 +387,15 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                                   ? Colors.green
                                   : Colors.grey.shade300,
                             ),
+
+                            boxShadow: [
+                              if (isSelected)
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.2),
+
+                                  blurRadius: 12,
+                                ),
+                            ],
                           ),
 
                           child: Text(
@@ -389,9 +412,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     }).toList(),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 40),
 
-                  // SAVE BUTTON
+                  // CONTINUE BUTTON
                   SizedBox(
                     width: double.infinity,
 
@@ -419,7 +442,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       ),
 
                       child: const Text(
-                        "Save & Continue",
+                        "Continue to KYC",
 
                         style: TextStyle(
                           fontSize: 18,
@@ -444,7 +467,9 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
   Widget buildTextField({
     required String hint,
+
     required IconData icon,
+
     required TextEditingController controller,
 
     TextInputType keyboardType = TextInputType.text,

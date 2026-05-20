@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:ui' as ui; 
-import 'package:flutter/services.dart'; 
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' hide ClusterManager, Cluster;
+import 'package:google_maps_flutter/google_maps_flutter.dart'
+    hide ClusterManager, Cluster;
 import 'package:http/http.dart' as http;
 import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart'; // 🚨 ADDED CLUSTER PACKAGE
 import 'package:url_launcher/url_launcher.dart';
@@ -23,16 +24,17 @@ class MapDiscoveryScreen extends StatefulWidget {
 class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   // 🚨 DISTANCE FILTER VARIABLES
   double _selectedRadiusKm = 11.0; // Default to max 10km
-  Position? _currentUserPosition; // Stores their GPS location so we don't have to keep pinging it
+  Position?
+  _currentUserPosition; // Stores their GPS location so we don't have to keep pinging it
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
-  
+
   BitmapDescriptor? _customZoneMarker;
   Timer? _refreshTimer;
   bool _hasLocationPermission = false;
   bool _isLocatingUser = true;
   bool _mapReady = false;
-  
+
   // 🚨 THE GPS ENGINE
   Future<Position?> _getUserLocation() async {
     try {
@@ -43,7 +45,13 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enable GPS services in your phone settings.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Please enable GPS services in your phone settings.',
+              ),
+            ),
+          );
         }
         return null;
       }
@@ -54,18 +62,26 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are denied.')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied.')),
+            );
           }
           return null;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are permanently denied, we cannot request permissions.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Location permissions are permanently denied, we cannot request permissions.',
+              ),
+            ),
+          );
         }
         return null;
-      } 
+      }
 
       if (mounted) {
         setState(() {
@@ -78,7 +94,9 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         desiredAccuracy: LocationAccuracy.high,
       ).timeout(
         const Duration(seconds: 15),
-        onTimeout: () => Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low),
+        onTimeout: () => Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low,
+        ),
       );
     } catch (e) {
       debugPrint('GPS Error: $e');
@@ -86,17 +104,17 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     }
   }
 
-// 🚨 AUTOMATIC STARTUP RADAR
- // 🚨 UPDATED STARTUP RADAR
+  // 🚨 AUTOMATIC STARTUP RADAR
+  // 🚨 UPDATED STARTUP RADAR
   Future<void> _locateUserAndCheckZones() async {
     // 1. Get User Location quietly
     Position? userPos = await _getUserLocation();
 
     // 🚨 NEW: Save it so the filter slider can use it!
     if (userPos != null) {
-      _currentUserPosition = userPos; 
+      _currentUserPosition = userPos;
     }
-    
+
     // 2. If we got the location, change the map's starting point to HERE!
     if (userPos != null) {
       _initialCameraPosition = CameraPosition(
@@ -123,13 +141,15 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       if (center == null) continue;
 
       double dist = _calculateDistance(
-        userPos.latitude, userPos.longitude, 
-        center.latitude, center.longitude
+        userPos.latitude,
+        userPos.longitude,
+        center.latitude,
+        center.longitude,
       );
 
       if (dist <= maxAllowedDistanceInKm) {
         hasNearbyZones = true;
-        break; 
+        break;
       }
     }
 
@@ -138,11 +158,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       _showNoZonesAlert(context);
     }
   }
-  
+
   // 🚨 FILTER STATE VARIABLES
   String _selectedVehicleType = "All";
-  double _minBatteryLevel = 0; 
-  double _maxPrice = 0.50; 
+  double _minBatteryLevel = 0;
+  double _maxPrice = 0.50;
   List<Map<String, dynamic>> _allLiveZones = [];
 
   // 🚨 NEW CLUSTER VARIABLES
@@ -151,14 +171,18 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
   @override
   void initState() {
-    super.initState();
-    
-    // 🚨 1. INITIALIZE CLUSTER MANAGER BEFORE LOADING DATA
-    _clusterManager = _initClusterManager();
 
-    // 🚨 SEQUENTIAL STARTUP: Load data first, then locate user
+    super.initState();
+
+    // INIT CLUSTER
+    _clusterManager =
+        _initClusterManager();
+
+    // LOAD MAP DATA
     _startupSequence();
-    _startAutoRefreshEngine(); 
+
+    // AUTO REFRESH
+    _startAutoRefreshEngine();
   }
 
   Future<void> _startupSequence() async {
@@ -186,7 +210,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     return ClusterManager<ZonePlace>(
       _clusterItems,
       _updateMarkers,
-     markerBuilder: (dynamic cluster) => _markerBuilder(cluster as Cluster<ZonePlace>),
+      markerBuilder: (dynamic cluster) =>
+          _markerBuilder(cluster as Cluster<ZonePlace>),
     );
   }
 
@@ -202,7 +227,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       markerId: MarkerId(cluster.getId()),
       position: cluster.location,
       onTap: () async {
-        
         // --- THE NEW SMART ZOOM LOGIC ---
         if (cluster.isMultiple) {
           final GoogleMapController? controller = _mapController;
@@ -215,17 +239,25 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
           double maxLng = cluster.items.first.location.longitude;
 
           for (var item in cluster.items) {
-            if (item.location.latitude < minLat) minLat = item.location.latitude;
-            if (item.location.latitude > maxLat) maxLat = item.location.latitude;
-            if (item.location.longitude < minLng) minLng = item.location.longitude;
-            if (item.location.longitude > maxLng) maxLng = item.location.longitude;
+            if (item.location.latitude < minLat)
+              minLat = item.location.latitude;
+            if (item.location.latitude > maxLat)
+              maxLat = item.location.latitude;
+            if (item.location.longitude < minLng)
+              minLng = item.location.longitude;
+            if (item.location.longitude > maxLng)
+              maxLng = item.location.longitude;
           }
 
           // 2. Zoom to fit the box exactly
           if (minLat == maxLat && minLng == maxLng) {
             // Fallback if they are perfectly on top of each other
-            controller.animateCamera(CameraUpdate.newLatLngZoom(
-                cluster.location, (await controller.getZoomLevel()) + 4));
+            controller.animateCamera(
+              CameraUpdate.newLatLngZoom(
+                cluster.location,
+                (await controller.getZoomLevel()) + 4,
+              ),
+            );
           } else {
             // The perfect bounding box
             final LatLngBounds bounds = LatLngBounds(
@@ -234,17 +266,19 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             );
             controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
           }
-        } 
+        }
         // --- END SMART ZOOM LOGIC ---
-        
         else {
           // SHOW BOTTOM SHEET for single zone tap
           _showZoneVehiclesSheet(context, cluster.items.first.rawData);
         }
       },
-      icon: cluster.isMultiple 
-          ? await _getClusterIcon(cluster.count) 
-          : _customZoneMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+      icon: cluster.isMultiple
+          ? await _getClusterIcon(cluster.count)
+          : _customZoneMarker ??
+                BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueViolet,
+                ),
     );
   }
 
@@ -252,10 +286,10 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   Future<BitmapDescriptor> _getClusterIcon(int clusterSize) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
-    const double size = 120.0; 
-    
+    const double size = 120.0;
+
     final Paint paint = Paint()
-      ..color = const Color(0xFF1E1452) 
+      ..color = const Color(0xFF1E1452)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(const Offset(size / 2, size / 2), size / 2.2, paint);
 
@@ -263,25 +297,32 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       ..color = Colors.white
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke;
-    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2.2, borderPaint);
+    canvas.drawCircle(
+      const Offset(size / 2, size / 2),
+      size / 2.2,
+      borderPaint,
+    );
 
     TextPainter painter = TextPainter(textDirection: TextDirection.ltr);
     painter.text = TextSpan(
       text: clusterSize.toString(),
       style: const TextStyle(
-        fontSize: size / 3, 
-        color: Colors.white, 
-        fontWeight: FontWeight.bold
+        fontSize: size / 3,
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
       ),
     );
-    
+
     painter.layout();
     painter.paint(
-      canvas, 
-      Offset(size / 2 - painter.width / 2, size / 2 - painter.height / 2)
+      canvas,
+      Offset(size / 2 - painter.width / 2, size / 2 - painter.height / 2),
     );
 
-    final img = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
+    final img = await pictureRecorder.endRecording().toImage(
+      size.toInt(),
+      size.toInt(),
+    );
     final data = await img.toByteData(format: ui.ImageByteFormat.png);
 
     return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
@@ -289,10 +330,10 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
   Future<void> _silentRefreshData() async {
     try {
-      final liveZones = await _fetchLiveZonesFromApi(); 
+      final liveZones = await _fetchLiveZonesFromApi();
       if (liveZones.isNotEmpty && mounted) {
         _allLiveZones = liveZones;
-        _applyFilters(); 
+        _applyFilters();
       }
     } catch (e) {
       print("Background refresh failed silently: $e");
@@ -308,12 +349,14 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   Future<void> _loadMapData() async {
     try {
       _customZoneMarker = await _loadCustomIconFromAsset(
-        'assets/evegah-zone-1.png', 
-        size: 130 
+        'assets/evegah-zone-1.png',
+        size: 130,
       );
     } catch (e) {
       debugPrint("Error loading custom icon, using default marker: $e");
-      _customZoneMarker = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
+      _customZoneMarker = BitmapDescriptor.defaultMarkerWithHue(
+        BitmapDescriptor.hueViolet,
+      );
     }
 
     setState(() => _markers = {});
@@ -325,16 +368,15 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         _showNoZonesAlert(context);
       });
     } else {
-      _allLiveZones = liveZones; 
+      _allLiveZones = liveZones;
       _applyFilters();
-      
     }
   }
 
   Future<List<Map<String, dynamic>>> _fetchLiveZonesFromApi() async {
     try {
       final SessionService sessionService = SessionService();
-      String? savedToken = await sessionService.getToken(); 
+      String? savedToken = await sessionService.getToken();
 
       if (savedToken == null || savedToken.isEmpty) {
         debugPrint("ERROR: No token found. User might not be logged in.");
@@ -346,23 +388,27 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         'mapCityId': '0',
         'mapCountryName': 'India',
         'mapStateName': 'Gujarat',
-        'mapCityName': 'Vadodara', 
+        'mapCityName': 'Vadodara',
         'dataFor': 'ForMapSearch',
-        'access_token': savedToken, 
+        'access_token': savedToken,
       };
 
-      final uri = Uri.parse(AppConstants.getLiveZones).replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        AppConstants.getLiveZones,
+      ).replace(queryParameters: queryParams);
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         final decodedData = json.decode(response.body);
         List<dynamic> zonesList = decodedData['data'] ?? decodedData;
         List<Map<String, dynamic>> mappedZones = [];
-        
+
         for (var item in zonesList) {
-          double lat = double.tryParse(item['latitude']?.toString() ?? '0') ?? 0.0;
-          double lng = double.tryParse(item['longitude']?.toString() ?? '0') ?? 0.0;
-          
+          double lat =
+              double.tryParse(item['latitude']?.toString() ?? '0') ?? 0.0;
+          double lng =
+              double.tryParse(item['longitude']?.toString() ?? '0') ?? 0.0;
+
           if (lat != 0.0 && lng != 0.0) {
             mappedZones.add({
               'id': item['zoneId']?.toString() ?? DateTime.now().toString(),
@@ -370,7 +416,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
               'zoneName': item['zoneName'],
               'zone_address': item['zone_address'],
               'bikeCount': item['bikeCount'],
-              'vehicles': item['vehicles'] ?? item['avaialableBikeListData'] ?? [],
+              'vehicles':
+                  item['vehicles'] ?? item['avaialableBikeListData'] ?? [],
             });
           }
         }
@@ -385,25 +432,41 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     }
   }
 
-  Future<BitmapDescriptor> _loadCustomIconFromAsset(String path, {int size = 100}) async {
+  Future<BitmapDescriptor> _loadCustomIconFromAsset(
+    String path, {
+    int size = 100,
+  }) async {
     ByteData data = await rootBundle.load(path);
-    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: size);
+    ui.Codec codec = await ui.instantiateImageCodec(
+      data.buffer.asUint8List(),
+      targetWidth: size,
+    );
     ui.FrameInfo fi = await codec.getNextFrame();
-    
+
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
     final Paint paint = Paint()..filterQuality = ui.FilterQuality.high;
 
     canvas.drawImageRect(
       fi.image,
-      Rect.fromLTWH(0, 0, fi.image.width.toDouble(), fi.image.height.toDouble()),
+      Rect.fromLTWH(
+        0,
+        0,
+        fi.image.width.toDouble(),
+        fi.image.height.toDouble(),
+      ),
       Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
       paint,
     );
 
-    final ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
-    final ByteData? bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    
+    final ui.Image image = await pictureRecorder.endRecording().toImage(
+      size,
+      size,
+    );
+    final ByteData? bytes = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+
     return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
   }
 
@@ -414,54 +477,65 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
     for (var zone in _allLiveZones) {
       // 🚨 ADD THIS NEW DISTANCE CHECK
-    if (_currentUserPosition != null && _selectedRadiusKm < 11.0) {
-      final center = zone['center'] as LatLng?;
-      if (center != null) {
-        double dist = _calculateDistance(
-          _currentUserPosition!.latitude, _currentUserPosition!.longitude, 
-          center.latitude, center.longitude
-        );
-        
-        // If the distance is greater than what the user selected on the slider, skip this zone!
-        if (dist > _selectedRadiusKm) {
-          continue; 
+      if (_currentUserPosition != null && _selectedRadiusKm < 11.0) {
+        final center = zone['center'] as LatLng?;
+        if (center != null) {
+          double dist = _calculateDistance(
+            _currentUserPosition!.latitude,
+            _currentUserPosition!.longitude,
+            center.latitude,
+            center.longitude,
+          );
+
+          // If the distance is greater than what the user selected on the slider, skip this zone!
+          if (dist > _selectedRadiusKm) {
+            continue;
+          }
         }
       }
-    }
       List<dynamic> allVehiclesInZone = zone['vehicles'] ?? [];
-      
-      List<dynamic> validVehicles = allVehiclesInZone.where((vehicle) {
-        if (!isFilterActive) return true; 
 
-        int battery = int.tryParse(vehicle['batteryPercentage']?.toString() ?? '-1') ?? -1;
-        return battery >= _minBatteryLevel; 
+      List<dynamic> validVehicles = allVehiclesInZone.where((vehicle) {
+        if (!isFilterActive) return true;
+
+        int battery =
+            int.tryParse(vehicle['batteryPercentage']?.toString() ?? '-1') ??
+            -1;
+        return battery >= _minBatteryLevel;
       }).toList();
 
       if (isFilterActive ? validVehicles.isNotEmpty : true) {
         Map<String, dynamic> updatedZone = Map<String, dynamic>.from(zone);
-        updatedZone['vehicles'] = isFilterActive ? validVehicles : allVehiclesInZone;
-        updatedZone['bikeCount'] = isFilterActive ? validVehicles.length : allVehiclesInZone.length; 
-        
+        updatedZone['vehicles'] = isFilterActive
+            ? validVehicles
+            : allVehiclesInZone;
+        updatedZone['bikeCount'] = isFilterActive
+            ? validVehicles.length
+            : allVehiclesInZone.length;
+
         filteredZones.add(updatedZone);
       }
     }
 
     // 🚨 SEND DATA TO CLUSTER MANAGER INSTEAD OF DIRECTLY TO MARKERS
     setState(() {
-      _clusterItems = filteredZones.map((zone) => ZonePlace(
-        name: zone['zoneName']?.toString() ?? '',
-        rawData: zone,
-        latLng: zone['center'],
-      )).toList();
-      
+      _clusterItems = filteredZones
+          .map(
+            (zone) => ZonePlace(
+              name: zone['zoneName']?.toString() ?? '',
+              rawData: zone,
+              latLng: zone['center'],
+            ),
+          )
+          .toList();
+
       _clusterManager.setItems(_clusterItems);
     });
     // Check if the map is empty AND if the button was clicked
     if (showAlert) {
-      
-      // NOTE: Change '_markers.isEmpty' to whatever variable you use to 
-      // hold your map pins or filtered zones. 
-      bool isMapEmpty = _markers.isEmpty; 
+      // NOTE: Change '_markers.isEmpty' to whatever variable you use to
+      // hold your map pins or filtered zones.
+      bool isMapEmpty = _markers.isEmpty;
 
       if (isMapEmpty) {
         // Wait 300 milliseconds for the Bottom Sheet to close before showing the alert
@@ -474,190 +548,253 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     }
   }
 
-   CameraPosition _initialCameraPosition = const CameraPosition(
-    target: LatLng(22.3072, 73.1812), 
-    zoom: 12.0,
+  CameraPosition _initialCameraPosition = const CameraPosition(
+    target: LatLng(
+      23.0225,
+      72.5714,
+    ),
+    zoom: 14.0,
   );
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA), 
+      backgroundColor: const Color(0xFFF5F6FA),
       // 🚨 THE NEW CONDITIONAL BODY
-      body: _isLocatingUser 
+      body: _isLocatingUser
           ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(color: Color(0xFF1E1452)),
                   SizedBox(height: 16),
-                  Text("Locating nearest bikes...", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  Text(
+                    "Locating nearest bikes...",
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
                 ],
               ),
             )
-      : Stack(
-        children: [
-          // A. THE MAP BASE
-          GoogleMap(
-            initialCameraPosition: _initialCameraPosition,
-            markers: _markers,
-            onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
-              // 🚨 LINK MANAGER TO THE MAP
-              _clusterManager.setMapId(controller.mapId);
-              // Trigger cluster update after map is ready
-              if (_clusterItems.isNotEmpty) {
-                _clusterManager.setItems(_clusterItems);
-              }
-              if (mounted) {
-                setState(() => _mapReady = true);
-              }
-            },
-            // 🚨 ADD THESE TWO LINES FOR CLUSTERING
-            onCameraMove: _clusterManager.onCameraMove,
-            onCameraIdle: _clusterManager.updateMap,
-            zoomControlsEnabled: false,
-            myLocationEnabled: _hasLocationPermission, //THIS: Turns on the glowing blue dot!
-            myLocationButtonEnabled: false,
-            compassEnabled: false,
-            mapToolbarEnabled: false,
-          ),
+          : Stack(
+              children: [
+                // A. THE MAP BASE
+                GoogleMap(
+                  initialCameraPosition: _initialCameraPosition,
+                  markers: _markers,
+                  onMapCreated: (GoogleMapController controller) {
+                    _mapController = controller;
+                    // 🚨 LINK MANAGER TO THE MAP
+                    _clusterManager.setMapId(controller.mapId);
+                    // Trigger cluster update after map is ready
+                    if (_clusterItems.isNotEmpty) {
+                      _clusterManager.setItems(_clusterItems);
+                    }
+                    if (mounted) {
+                      setState(() => _mapReady = true);
+                    }
+                  },
+                  // 🚨 ADD THESE TWO LINES FOR CLUSTERING
+                  onCameraMove: _clusterManager.onCameraMove,
+                  onCameraIdle: _clusterManager.updateMap,
+                  zoomControlsEnabled: false,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
+                  compassEnabled: false,
+                  mapToolbarEnabled: false,
+                ),
 
-          // B. UI OVERLAYS (Hamburger & Filter)
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 50, width: 50,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2)]),
-                    child: IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.black87),
-                      onPressed: () { },
+                // B. UI OVERLAYS (Hamburger & Filter)
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 50,
+                          width: 50,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.menu, color: Colors.black87),
+                            onPressed: () {},
+                          ),
+                        ),
+
+                        Container(
+                          height: 50,
+                          width: 50,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.tune,
+                              color:
+                                  _minBatteryLevel > 0 ||
+                                      _selectedVehicleType != "All"
+                                  ? Colors.purple
+                                  : Colors.black87,
+                            ),
+                            onPressed: () {
+                              _showFilterSheet(context);
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  
-                  Container(
-                    height: 50, width: 50,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2)]),
-                    child: IconButton(
-                      icon: Icon(Icons.tune, color: _minBatteryLevel > 0 || _selectedVehicleType != "All" ? Colors.purple : Colors.black87),
-                      onPressed: () {
-                        _showFilterSheet(context);
+                ),
+
+                // C. SCAN BUTTON
+                Positioned(
+                  bottom: 24,
+                  left: 20,
+                  right: 20,
+                  child: SizedBox(
+                    height: 60,
+                    width: double.infinity,
+
+                    child: ElevatedButton(
+                      // 🚨 THE NEW ONPRESSED LOGIC
+                      onPressed: () async {
+                        // 1. Show a loading message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Locating nearest available bikes...',
+                            ),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+
+                        // 2. Ping GPS
+                        Position? userPos = await _getUserLocation();
+                        if (userPos == null) return; // Stop if GPS failed
+
+                        // 3. The Radar Sieve
+                        Map<String, dynamic>? closestZone;
+                        double minDistance = double.infinity;
+
+                        for (var zone in _allLiveZones) {
+                          // Use your master list
+                          // Skip zones with no bikes
+                          if (zone['vehicles']?.isEmpty ?? true) continue;
+
+                          final center = zone['center'] as LatLng?;
+                          if (center == null) continue;
+
+                          // Calculate distance from user to this zone
+                          double dist = _calculateDistance(
+                            userPos.latitude,
+                            userPos.longitude,
+                            center.latitude,
+                            center.longitude,
+                          );
+
+                          if (dist < minDistance) {
+                            minDistance = dist;
+                            closestZone = zone;
+                          }
+                        }
+
+                        // --- RADAR SIEVE FINISHES HERE ---
+
+                        // 🚨 THE REALITY CHECK: Define what "Nearby" actually means
+                        double maxAllowedDistanceInKm = 10.0; // 10 kilometers
+
+                        // 4. The Flight & Reveal (UPGRADED)
+                        // Check if we found a zone AND if it is actually close to the user
+                        if (closestZone != null &&
+                            minDistance <= maxAllowedDistanceInKm) {
+                          final targetLatLng = closestZone['center'] as LatLng;
+                          final GoogleMapController? controller =
+                              _mapController;
+
+                          // Fly the camera to the zone
+                          if (controller != null) {
+                            await controller.animateCamera(
+                              CameraUpdate.newLatLngZoom(targetLatLng, 16.5),
+                            );
+                          }
+
+                          if (mounted) {
+                            _showZoneVehiclesSheet(context, closestZone);
+                          }
+                        } else {
+                          // 🚨 Trigger your custom pop-up dialog instead of the SnackBar!
+                          if (mounted) {
+                            _showNoZonesAlert(context);
+                          }
+                        }
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E1452),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        elevation: 10,
+                        shadowColor: const Color(0x661E1452),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // 🚨 UPDATE THE TEXT AND ICON
+                          Icon(Icons.near_me, color: Colors.white),
+                          SizedBox(width: 10),
+                          Text(
+                            "Find Nearby",
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          
-           // C. SCAN BUTTON
-          Positioned(
-            bottom: 24, left: 20, right: 20,
-            child: SizedBox(
-              height: 60, width: double.infinity,
-              
-                child: ElevatedButton(
-                // 🚨 THE NEW ONPRESSED LOGIC
-                onPressed: () async { 
-                  // 1. Show a loading message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Locating nearest available bikes...'), duration: Duration(seconds: 2))
-                  );
-
-                  // 2. Ping GPS
-                  Position? userPos = await _getUserLocation();
-                  if (userPos == null) return; // Stop if GPS failed
-
-                  // 3. The Radar Sieve
-                  Map<String, dynamic>? closestZone;
-                  double minDistance = double.infinity;
-
-                  for (var zone in _allLiveZones) { // Use your master list
-                    // Skip zones with no bikes
-                    if (zone['vehicles']?.isEmpty ?? true) continue;
-
-                    final center = zone['center'] as LatLng?;
-                    if (center == null) continue;
-
-                    // Calculate distance from user to this zone
-                    double dist = _calculateDistance(
-                      userPos.latitude, userPos.longitude, 
-                      center.latitude, center.longitude
-                    );
-
-                    if (dist < minDistance) {
-                      minDistance = dist;
-                      closestZone = zone;
-                    }
-                  }
-
-                 // --- RADAR SIEVE FINISHES HERE ---
-
-                  // 🚨 THE REALITY CHECK: Define what "Nearby" actually means
-                  double maxAllowedDistanceInKm = 10.0; // 10 kilometers
-
-                  // 4. The Flight & Reveal (UPGRADED)
-                  // Check if we found a zone AND if it is actually close to the user
-                  if (closestZone != null && minDistance <= maxAllowedDistanceInKm) {
-                    final targetLatLng = closestZone['center'] as LatLng;
-                    final GoogleMapController? controller = _mapController;
-                    
-                    // Fly the camera to the zone
-                    if (controller != null) {
-                      await controller.animateCamera(CameraUpdate.newLatLngZoom(targetLatLng, 16.5));
-                    }
-                    
-                    if (mounted) {
-                      _showZoneVehiclesSheet(context, closestZone);
-                    }
-                  } else {
-                    // 🚨 Trigger your custom pop-up dialog instead of the SnackBar!
-                    if (mounted) {
-                      _showNoZonesAlert(context);
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E1452), 
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                  elevation: 10, shadowColor: const Color(0x661E1452),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 🚨 UPDATE THE TEXT AND ICON
-                    Icon(Icons.near_me, color: Colors.white),
-                    SizedBox(width: 10),
-                    Text("Find Nearby", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                           ),
+                // D. MAP LOADING OVERLAY
+                if (!_mapReady)
+                  Container(
+                    color: const Color(0xFFF5F6FA),
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: Color(0xFF1E1452)),
+                          SizedBox(height: 16),
+                          Text(
+                            "Loading map...",
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ), 
-          // D. MAP LOADING OVERLAY
-          if (!_mapReady)
-            Container(
-              color: const Color(0xFFF5F6FA),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Color(0xFF1E1452)),
-                    SizedBox(height: 16),
-                    Text("Loading map...", style: TextStyle(color: Colors.grey, fontSize: 16)),
-                  ],
-                ),
-              ),
-            ),
-         ],
-        ),
     );
-      
   }
 
   void _showNoZonesAlert(BuildContext context) {
@@ -666,34 +803,53 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return PopScope(
-          canPop: false, 
+          canPop: false,
           child: Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Container(
-              width: 320, 
+              width: 320,
               padding: const EdgeInsets.all(28),
               child: Column(
-                mainAxisSize: MainAxisSize.min, 
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Alert", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Alert",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 20),
                   const Text(
                     "No eVegah zones found in the specified location.\nExplore other areas for available zones.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, color: Colors.black87, height: 1.5),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.black87,
+                      height: 1.5,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   SizedBox(
-                    width: 160, height: 48,
+                    width: 160,
+                    height: 48,
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         side: BorderSide(color: Colors.grey.shade400, width: 1),
                       ),
-                      child: const Text("OK", style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "OK",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -705,16 +861,17 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
   void _showZoneVehiclesSheet(BuildContext context, Map<String, dynamic> zone) {
     String zoneName = zone['zoneName']?.toString() ?? 'eVegah Parking Zone';
-    String zoneAddress = zone['zone_address']?.toString() ?? 'Address not available';
-    List<dynamic> zoneVehicles = zone['vehicles'] ?? []; 
+    String zoneAddress =
+        zone['zone_address']?.toString() ?? 'Address not available';
+    List<dynamic> zoneVehicles = zone['vehicles'] ?? [];
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent, 
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.55, 
+          height: MediaQuery.of(context).size.height * 0.55,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -723,14 +880,15 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             children: [
               Container(
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
-                height: 5, width: 50,
+                height: 5,
+                width: 50,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300, 
-                  borderRadius: BorderRadius.circular(10)
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 8, 8), 
+                padding: const EdgeInsets.fromLTRB(24, 16, 8, 8),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -741,223 +899,335 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           Text(
                             zoneName,
                             style: const TextStyle(
-                              fontSize: 20, 
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 6),
-                         // 🚨 THE UPGRADED ADDRESS ROW WITH NAVIGATION BUTTON
+                          // 🚨 THE UPGRADED ADDRESS ROW WITH NAVIGATION BUTTON
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                              const Icon(
+                                Icons.location_on,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   zoneAddress,
                                   style: const TextStyle(
-                                    fontSize: 14, 
+                                    fontSize: 14,
                                     color: Colors.grey,
-                                    height: 1.3, 
+                                    height: 1.3,
                                   ),
                                 ),
                               ),
-                              
+
                               // 👇 THE NEW DIRECTIONS BUTTON 👇
                               const SizedBox(width: 8),
                               OutlinedButton.icon(
                                 onPressed: () {
                                   // 🚨 THE FIX: Extract the coordinates from the 'center' object!
-                                  final centerPoint = zone['center']; 
-                                  
+                                  final centerPoint = zone['center'];
+
                                   if (centerPoint != null) {
                                     // It's a LatLng object, so we can pull latitude and longitude directly from it
-                                    _launchDirections(centerPoint.latitude, centerPoint.longitude);
+                                    _launchDirections(
+                                      centerPoint.latitude,
+                                      centerPoint.longitude,
+                                    );
                                   } else {
-                                    debugPrint("Error: Center coordinates are missing!");
+                                    debugPrint(
+                                      "Error: Center coordinates are missing!",
+                                    );
                                   }
                                 },
-                                icon: const Icon(Icons.directions_walk, size: 16, color: Color(0xFF1E1452)),
+                                icon: const Icon(
+                                  Icons.directions_walk,
+                                  size: 16,
+                                  color: Color(0xFF1E1452),
+                                ),
                                 label: const Text(
-                                  "Directions", 
-                                  style: TextStyle(color: Color(0xFF1E1452), fontWeight: FontWeight.bold)
-                                 )
-                                    ),
+                                  "Directions",
+                                  style: TextStyle(
+                                    color: Color(0xFF1E1452),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black54), 
+                      icon: const Icon(Icons.close, color: Colors.black54),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
               // --- 🚨 SMART UX BANNERS START ---
-                          Builder(
-                            builder: (context) {
-                              bool isEmptyZone = zoneVehicles.isEmpty;
-                              bool isHighDemand = zoneVehicles.isNotEmpty && zoneVehicles.length <= 2;
-                              
-                              Map<String, dynamic>? alternativeZone;
-                              if (isEmptyZone || isHighDemand) {
-                                alternativeZone = _getBestAlternativeZone(zone);
-                              }
+              Builder(
+                builder: (context) {
+                  bool isEmptyZone = zoneVehicles.isEmpty;
+                  bool isHighDemand =
+                      zoneVehicles.isNotEmpty && zoneVehicles.length <= 2;
 
-                              return Column(
-                                children: [
-                                  // 1. The "Empty Zone" Warning
-                                  if (isEmptyZone)
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.red.shade200),
-                                      ),
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.error_outline, color: Colors.red, size: 22),
-                                          SizedBox(width: 10),
-                                          Expanded(
-                                            child: Text(
-                                              "All bikes are currently rented from this zone.",
-                                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 13),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                  Map<String, dynamic>? alternativeZone;
+                  if (isEmptyZone || isHighDemand) {
+                    alternativeZone = _getBestAlternativeZone(zone);
+                  }
 
-                                  // 2. The "High Demand" Warning
-                                  if (isHighDemand)
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.orange.shade200),
-                                      ),
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
-                                          SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              "High Demand Area! Bikes here usually go fast.",
-                                              style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.w600, fontSize: 13),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                  // 3. The Smart Suggestion (Alternative Zone)
-                                  if (alternativeZone != null)
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF0EDFF), 
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: const Color(0xFF1E1452).withOpacity(0.2)),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.lightbulb_circle, color: Color(0xFF1E1452), size: 28),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                const Text("Nearest Available Bikes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E1452))),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  "${alternativeZone['zoneName']} has ${alternativeZone['vehicles']?.length} bikes and is just ${(alternativeZone['temp_distance'] * 1000).toInt()}m away.",
-                                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          // Navigate direct to alternative!
-                                          IconButton(
-                                            icon: const Icon(Icons.directions, color: Color(0xFF1E1452)),
-                                            onPressed: () {
-                                              final altCenter = alternativeZone!['center'] as LatLng;
-                                              _launchDirections(altCenter.latitude, altCenter.longitude);
-                                            },
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              );
-                            }
+                  return Column(
+                    children: [
+                      // 1. The "Empty Zone" Warning
+                      if (isEmptyZone)
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
                           ),
-                          // --- 🚨 SMART UX BANNERS END ---
-              Divider(thickness: 1, color: Colors.grey[300], height: 24), 
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red,
+                                size: 22,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  "All bikes are currently rented from this zone.",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // 2. The "High Demand" Warning
+                      if (isHighDemand)
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.local_fire_department,
+                                color: Colors.orange,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "High Demand Area! Bikes here usually go fast.",
+                                  style: TextStyle(
+                                    color: Colors.deepOrange,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // 3. The Smart Suggestion (Alternative Zone)
+                      if (alternativeZone != null)
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 4,
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0EDFF),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF1E1452).withOpacity(0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.lightbulb_circle,
+                                color: Color(0xFF1E1452),
+                                size: 28,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Nearest Available Bikes",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: Color(0xFF1E1452),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      "${alternativeZone['zoneName']} has ${alternativeZone['vehicles']?.length} bikes and is just ${(alternativeZone['temp_distance'] * 1000).toInt()}m away.",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Navigate direct to alternative!
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.directions,
+                                  color: Color(0xFF1E1452),
+                                ),
+                                onPressed: () {
+                                  final altCenter =
+                                      alternativeZone!['center'] as LatLng;
+                                  _launchDirections(
+                                    altCenter.latitude,
+                                    altCenter.longitude,
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              // --- 🚨 SMART UX BANNERS END ---
+              Divider(thickness: 1, color: Colors.grey[300], height: 24),
               // 3. Table Columns
-                          if (zoneVehicles.isNotEmpty) // 🚨 ADD THIS IF STATEMENT
-                            Padding (
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              child: Row (
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text("Vehicle No.", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                                  Text("Status", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
-                                ],
-                              ),
-                            ),
-              Expanded(
-                child: zoneVehicles.isEmpty 
-                  ? const Center(child: Text("No vehicles currently available here.", style: TextStyle(color: Colors.grey, fontSize: 16)))
-                  : ListView.separated(
-                  itemCount: zoneVehicles.length,
-                  separatorBuilder: (context, index) => Divider(color: Colors.grey.shade200, indent: 24, endIndent: 24, height: 1),
-                  itemBuilder: (context, index) {
-                    final vehicle = zoneVehicles[index];
-                    final String vehicleId = vehicle['lockNumber'] ?? "Unknown";
-                    final int battery = int.tryParse(vehicle['batteryPercentage']?.toString() ?? '-1') ?? -1;
-                    final String statusText = battery < 0 ? "Available - NA" : "Available - $battery%";
-
-                    return InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VehicleDetailsScreen(vehicleId: vehicleId),
-                          ),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(vehicleId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                            Text(
-                              statusText,
-                              style: TextStyle(
-                                color: battery < 0 ? Colors.grey.shade600 : Colors.green.shade700,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+              if (zoneVehicles.isNotEmpty) // 🚨 ADD THIS IF STATEMENT
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Vehicle No.",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
                         ),
                       ),
-                    );
-                  },
+                      Text(
+                        "Status",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              Expanded(
+                child: zoneVehicles.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No vehicles currently available here.",
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: zoneVehicles.length,
+                        separatorBuilder: (context, index) => Divider(
+                          color: Colors.grey.shade200,
+                          indent: 24,
+                          endIndent: 24,
+                          height: 1,
+                        ),
+                        itemBuilder: (context, index) {
+                          final vehicle = zoneVehicles[index];
+                          final String vehicleId =
+                              vehicle['lockNumber'] ?? "Unknown";
+                          final int battery =
+                              int.tryParse(
+                                vehicle['batteryPercentage']?.toString() ??
+                                    '-1',
+                              ) ??
+                              -1;
+                          final String statusText = battery < 0
+                              ? "Available - NA"
+                              : "Available - $battery%";
+
+                          return InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VehicleDetailsScreen(
+                                    vehicleId: vehicleId,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 18,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    vehicleId,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Text(
+                                    statusText,
+                                    style: TextStyle(
+                                      color: battery < 0
+                                          ? Colors.grey.shade600
+                                          : Colors.green.shade700,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ],
           ),
         );
-      }
+      },
     );
   }
 
@@ -966,7 +1236,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     String tempType = _selectedVehicleType;
     double tempBattery = _minBatteryLevel;
     double tempPrice = _maxPrice;
-    double tempRadius = _selectedRadiusKm; // 🚨 ADDED: Temp variable for distance
+    double tempRadius =
+        _selectedRadiusKm; // 🚨 ADDED: Temp variable for distance
 
     showModalBottomSheet(
       context: context,
@@ -978,13 +1249,13 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             return Container(
               padding: const EdgeInsets.all(24),
               // Increased height slightly to give the UI room to breathe
-              height: MediaQuery.of(context).size.height * 0.65, 
+              height: MediaQuery.of(context).size.height * 0.65,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               // 🚨 ADDED: SingleChildScrollView prevents the yellow/black overflow stripes
-              child: SingleChildScrollView( 
+              child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -992,7 +1263,14 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Filter Options", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E1452))),
+                        const Text(
+                          "Filter Options",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E1452),
+                          ),
+                        ),
                         TextButton(
                           onPressed: () {
                             setModalState(() {
@@ -1002,14 +1280,26 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                               tempRadius = 11.0; // 🚨 Change this to 11.0
                             });
                           },
-                          child: const Text("Clear All", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                        )
+                          child: const Text(
+                            "Clear All",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // --- VEHICLE TYPE ---
-                    const Text("Vehicle Type", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Vehicle Type",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 12,
@@ -1019,7 +1309,10 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           label: Text(type),
                           selected: isSelected,
                           selectedColor: const Color(0xFF1E1452),
-                          labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.bold,
+                          ),
                           backgroundColor: Colors.grey.shade100,
                           onSelected: (bool selected) {
                             setModalState(() => tempType = type);
@@ -1033,11 +1326,23 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Maximum Walking Distance", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Maximum Walking Distance",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         // Show "Anywhere" if the slider is maxed out
                         Text(
-                          tempRadius == 11.0 ? "Anywhere" : "${tempRadius.toInt()} km", 
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)
+                          tempRadius == 11.0
+                              ? "Anywhere"
+                              : "${tempRadius.toInt()} km",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
                         ),
                       ],
                     ),
@@ -1048,7 +1353,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                       divisions: 10, // 🚨 Increased divisions to 10
                       activeColor: Colors.blue,
                       inactiveColor: Colors.blue.shade100,
-                      onChanged: (value) => setModalState(() => tempRadius = value),
+                      onChanged: (value) =>
+                          setModalState(() => tempRadius = value),
                     ),
                     const SizedBox(height: 20),
 
@@ -1056,8 +1362,21 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Minimum Battery", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text("${tempBattery.toInt()}%", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+                        const Text(
+                          "Minimum Battery",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "${tempBattery.toInt()}%",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
                       ],
                     ),
                     Slider(
@@ -1067,7 +1386,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                       divisions: 10,
                       activeColor: Colors.green,
                       inactiveColor: Colors.green.shade100,
-                      onChanged: (value) => setModalState(() => tempBattery = value),
+                      onChanged: (value) =>
+                          setModalState(() => tempBattery = value),
                     ),
                     const SizedBox(height: 20),
 
@@ -1075,8 +1395,21 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Max Fare/Min", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text("₹${tempPrice.toStringAsFixed(2)}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
+                        const Text(
+                          "Max Fare/Min",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "₹${tempPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
                       ],
                     ),
                     Slider(
@@ -1086,11 +1419,13 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                       divisions: 18,
                       activeColor: Colors.red,
                       inactiveColor: Colors.red.shade100,
-                      onChanged: (value) => setModalState(() => tempPrice = value),
+                      onChanged: (value) =>
+                          setModalState(() => tempPrice = value),
                     ),
-                    
-                    const SizedBox(height: 30), // Replaced Spacer() with fixed spacing to fix overflow
 
+                    const SizedBox(
+                      height: 30,
+                    ), // Replaced Spacer() with fixed spacing to fix overflow
                     // --- APPLY BUTTON ---
                     SizedBox(
                       width: double.infinity,
@@ -1102,33 +1437,49 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             _selectedVehicleType = tempType;
                             _minBatteryLevel = tempBattery;
                             _maxPrice = tempPrice;
-                            _selectedRadiusKm = tempRadius; // 🚨 Save distance here!
+                            _selectedRadiusKm =
+                                tempRadius; // 🚨 Save distance here!
                           });
-                          Navigator.pop(context); 
-                          _applyFilters(showAlert: true); // Apply everything at once
+                          Navigator.pop(context);
+                          _applyFilters(
+                            showAlert: true,
+                          ); // Apply everything at once
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1E1452),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                        child: const Text("Apply Filters", style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Apply Filters",
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             );
-          }
+          },
         );
-      }
+      },
     );
   }
+
   // 🚨 THE NAVIGATION ENGINE
-  Future<void> _launchDirections(double destinationLat, double destinationLng) async {
+  Future<void> _launchDirections(
+    double destinationLat,
+    double destinationLng,
+  ) async {
     // Official Universal Google Maps URL for walking directions
-    final String googleMapsUrl = 
+    final String googleMapsUrl =
         "https://www.google.com/maps/dir/?api=1&destination=$destinationLat,$destinationLng&travelmode=walking";
-        
+
     final Uri uri = Uri.parse(googleMapsUrl);
 
     if (await canLaunchUrl(uri)) {
@@ -1138,8 +1489,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       debugPrint("Could not open maps application.");
     }
   }
+
   // 🚨 NEW: Smart Engine to find the nearest backup parking zone
-  Map<String, dynamic>? _getBestAlternativeZone(Map<String, dynamic> currentZone) {
+  Map<String, dynamic>? _getBestAlternativeZone(
+    Map<String, dynamic> currentZone,
+  ) {
     final currentCenter = currentZone['center'] as LatLng?;
     if (currentCenter == null) return null;
 
@@ -1156,11 +1510,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       if (bikeCount < 3) continue;
 
       double distanceKm = _calculateDistance(
-        currentCenter.latitude, currentCenter.longitude,
-        center.latitude, center.longitude
+        currentCenter.latitude,
+        currentCenter.longitude,
+        center.latitude,
+        center.longitude,
       );
-
-     
 
       // Must be within walking distance (e.g., 1.5 km)
       if (distanceKm <= 10) {
@@ -1173,18 +1527,30 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     if (validAlternatives.isEmpty) return null;
 
     // Sort by closest distance and return the winner
-    validAlternatives.sort((a, b) => (a['temp_distance'] as double).compareTo(b['temp_distance'] as double));
+    validAlternatives.sort(
+      (a, b) => (a['temp_distance'] as double).compareTo(
+        b['temp_distance'] as double,
+      ),
+    );
     return validAlternatives.first;
   }
 
+
   // 🚨 DISTANCE CALCULATOR (Haversine formula)
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     var p = 0.017453292519943295;
-    var a = 0.5 -
+    var a =
+        0.5 -
         math.cos((lat2 - lat1) * p) / 2 +
         math.cos(lat1 * p) *
             math.cos(lat2 * p) *
-            (1 - math.cos((lon2 - lon1) * p)) / 2;
+            (1 - math.cos((lon2 - lon1) * p)) /
+            2;
     return 12742 * math.asin(math.sqrt(a));
   }
 }
@@ -1195,11 +1561,7 @@ class ZonePlace with ClusterItem {
   final Map<String, dynamic> rawData;
   final LatLng latLng;
 
-  ZonePlace({
-    required this.name,
-    required this.rawData,
-    required this.latLng,
-  });
+  ZonePlace({required this.name, required this.rawData, required this.latLng});
 
   @override
   LatLng get location => latLng;
