@@ -28,48 +28,57 @@ class _UnlockingScreenState extends State<UnlockingScreen> {
   }
 
   Future<void> startUnlockFlow() async {
+    // 🚨 1. DUMMY VEHICLE BYPASS
+    // If the ID is TEST123, skip the real APIs and GPS checks so we don't accidentally unlock a real bike!
+    if (widget.vehicleId == "TEST123") {
+      await Future.delayed(
+        const Duration(seconds: 2),
+      ); // Fake a cool loading animation
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RideStartedScreen(vehicleId: widget.vehicleId),
+        ),
+      );
+      return; // Stops the rest of this function from running
+    }
+
+    // -------------------------------------------------------------
+    // REAL BIKES CODE BELOW (Only runs if ID is NOT "TEST123")
+    // -------------------------------------------------------------
+
     // VALIDATE VEHICLE
     bool valid = await unlockService.validateVehicle(widget.vehicleId);
-
     if (!valid) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Vehicle Not Found ❌")));
-
       Navigator.pop(context);
-
       return;
     }
 
     // GET USER LOCATION
     Position? userLocation = await locationService.getCurrentLocation();
-
     if (userLocation == null) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Location Permission Required 📍")),
       );
-
       Navigator.pop(context);
-
       return;
     }
 
     // GET VEHICLE LOCATION
     final vehicleData = unlockService.vehicleLocations[widget.vehicleId];
-
     if (vehicleData == null) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Vehicle Location Not Found ❌")),
       );
-
       Navigator.pop(context);
-
       return;
     }
 
@@ -77,7 +86,6 @@ class _UnlockingScreenState extends State<UnlockingScreen> {
     double distance = locationService.calculateDistance(
       userLocation.latitude,
       userLocation.longitude,
-
       vehicleData["lat"]!,
       vehicleData["lng"]!,
     );
@@ -85,7 +93,6 @@ class _UnlockingScreenState extends State<UnlockingScreen> {
     // CHECK DISTANCE
     if (distance > 20) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -93,21 +100,16 @@ class _UnlockingScreenState extends State<UnlockingScreen> {
           ),
         ),
       );
-
       Navigator.pop(context);
-
       return;
     }
 
     // UNLOCK VEHICLE
     bool unlocked = await unlockService.unlockVehicle(widget.vehicleId);
-
     if (unlocked) {
       if (!mounted) return;
-
       Navigator.pushReplacement(
         context,
-
         MaterialPageRoute(
           builder: (context) => RideStartedScreen(vehicleId: widget.vehicleId),
         ),
