@@ -598,8 +598,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                   onCameraMove: _clusterManager.onCameraMove,
                   onCameraIdle: _clusterManager.updateMap,
                   zoomControlsEnabled: false,
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
+                  myLocationEnabled: _hasLocationPermission, //THIS: Turns on the glowing blue dot!
+                  myLocationButtonEnabled: false,
                   compassEnabled: false,
                   mapToolbarEnabled: false,
                 ),

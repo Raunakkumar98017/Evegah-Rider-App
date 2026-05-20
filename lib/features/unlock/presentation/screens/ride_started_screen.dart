@@ -5,6 +5,7 @@ import 'package:evegah_rider_app/features/dashboard/presentation/screens/dashboa
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'feedback_bottom_sheet.dart';
 
 class RideStartedScreen extends StatefulWidget {
   final String vehicleId;
@@ -169,7 +170,7 @@ class _RideStartedScreenState extends State<RideStartedScreen> {
     }
   }
 
-  Future<void> _endRide() async {
+ Future<void> _endRide() async {
     setState(() => isEndingRide = true);
 
     Position? finalPos;
@@ -179,19 +180,32 @@ class _RideStartedScreenState extends State<RideStartedScreen> {
       print("Couldn't get final GPS");
     }
 
-    // 🚨 1. UPDATE TEST BYPASS NAVIGATION
+    // 🚨 1. UPDATE TEST BYPASS
     if (widget.vehicleId == "TEST123") {
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          (route) => false, // This false wipes the history so the back button won't go back to the ride!
-        );
+        // Show the Rating Sheet first!
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+          builder: (context) => FeedbackBottomSheet(rideId: widget.vehicleId),
+        ).then((_) {
+          // .then() waits for the sheet to close, THEN goes to Dashboard
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+              (route) => false,
+            );
+          }
+        });
       }
       return;
     }
 
+    // 🚨 2. UPDATE REAL API BLOCK
     try {
       final response = await http.post(
         Uri.parse('$apiUrl/v1/updateDetailsRideEnds?access_token=$dummyToken'),
@@ -207,13 +221,23 @@ class _RideStartedScreenState extends State<RideStartedScreen> {
       );
 
       if (response.statusCode == 200) {
-        // 🚨 2. UPDATE REAL API SUCCESS NAVIGATION
         if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-            (route) => false, 
-          );
+          // Show Rating Sheet on Real API Success
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+            builder: (context) => FeedbackBottomSheet(rideId: widget.vehicleId),
+          ).then((_) {
+            if (mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                (route) => false, 
+              );
+            }
+          });
         }
       } else {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to end ride.")));

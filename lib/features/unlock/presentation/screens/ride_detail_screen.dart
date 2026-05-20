@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'feedback_bottom_sheet.dart';
 
 class RideDetailScreen extends StatefulWidget {
   final Map<String, dynamic> rideData;
@@ -251,6 +252,33 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                 ),
                 icon: const Icon(Icons.receipt_long_rounded, size: 24),
                 label: const Text("Download Invoice", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true, // Allows sheet to expand to fit content
+                    backgroundColor: Colors.white,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                    ),
+                    builder: (context) => FeedbackBottomSheet(rideId: widget.rideData['rideId']),
+                  );
+                  
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green,
+                  side: const BorderSide(color: Colors.green, width: 2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                icon: const Icon(Icons.star_rate_rounded, size: 24),
+                label: const Text("Rate this Ride", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 20),

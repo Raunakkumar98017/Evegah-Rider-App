@@ -41,11 +41,11 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     super.initState();
 
     // EMPTY PROFESSIONAL PROFILE
-    nameController.text = "";
+    nameController.text = "test";
 
-    emailController.text = "";
+    emailController.text = "test@example.com";
 
-    emergencyController.text = "";
+    emergencyController.text = "1234567890";
   }
 
   // PICK PROFILE IMAGE
