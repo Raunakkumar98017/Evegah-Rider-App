@@ -41,6 +41,7 @@ class WalletService {
 
   // =========================
   // FETCH USER WALLET
+  // GET /getUser
   // =========================
 
   Future<bool> fetchWalletData() async {
@@ -76,6 +77,7 @@ class WalletService {
 
   // =========================
   // FETCH TRANSACTIONS
+  // GET /getLatestTransactionList
   // =========================
 
   Future<bool> fetchTransactions() async {
@@ -121,7 +123,8 @@ class WalletService {
   }
 
   // =========================
-  // CREATE RECHARGE ORDER
+  // CREATE RAZORPAY ORDER
+  // POST /api/v1/order
   // =========================
 
   Future<Map<String, dynamic>?> createRechargeOrder(double amount) async {
@@ -158,6 +161,7 @@ class WalletService {
 
   // =========================
   // VERIFY PAYMENT
+  // POST /api/v1/verifyPayment
   // =========================
 
   Future<bool> verifyPayment({
@@ -198,6 +202,7 @@ class WalletService {
 
   // =========================
   // GET ALL PAYMENTS
+  // GET /api/v1/getAllPayments
   // =========================
 
   Future<List<dynamic>> getAllPayments() async {
@@ -222,6 +227,7 @@ class WalletService {
 
   // =========================
   // WITHDRAW REQUEST
+  // POST /getWithdrawRequestFromUser
   // =========================
 
   Future<bool> requestWithdraw(double amount) async {
@@ -242,29 +248,5 @@ class WalletService {
 
       return false;
     }
-  }
-
-  // =========================
-  // DEDUCT RIDE FARE
-  // =========================
-
-  bool deductMoney(double amount) {
-    if (_walletBalance < amount) {
-      return false;
-    }
-
-    _walletBalance -= amount;
-
-    _transactions.insert(0, {
-      "title": "Ride Payment",
-
-      "amount": amount,
-
-      "type": "debit",
-
-      "time": DateTime.now().toString(),
-    });
-
-    return true;
   }
 }
