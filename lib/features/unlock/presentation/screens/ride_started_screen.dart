@@ -3,17 +3,21 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class WalletService {
+
   // =========================
   // BASE CONFIG
   // =========================
 
-  static const String baseUrl = "https://admin.evegah.com";
+  static const String baseUrl =
+      "https://admin.evegah.com";
 
   // ⚠️ REPLACE WITH REAL TOKEN
-  static const String accessToken = "PASTE_REAL_ACCESS_TOKEN";
+  static const String accessToken =
+      "PASTE_REAL_ACCESS_TOKEN";
 
   // ⚠️ REPLACE WITH REAL USER ID
-  static const String userId = "1";
+  static const String userId =
+      "1";
 
   // =========================
   // LOCAL CACHE
@@ -25,50 +29,81 @@ class WalletService {
 
   double _extraCharges = 0;
 
-  List<Map<String, dynamic>> _transactions = [];
+  List<Map<String, dynamic>>
+      _transactions = [];
 
   // =========================
   // GETTERS
   // =========================
 
-  double get walletBalance => _walletBalance;
+  double get walletBalance =>
+      _walletBalance;
 
-  double get depositBalance => _depositBalance;
+  double get depositBalance =>
+      _depositBalance;
 
-  double get extraCharges => _extraCharges;
+  double get extraCharges =>
+      _extraCharges;
 
-  List<Map<String, dynamic>> get transactions => _transactions;
+  List<Map<String, dynamic>>
+      get transactions =>
+          _transactions;
 
   // =========================
   // FETCH USER WALLET
   // =========================
 
   Future<bool> fetchWalletData() async {
+
     try {
-      final response = await http.get(
+
+      final response =
+          await http.get(
+
         Uri.parse(
           "$baseUrl/getUser?id=$userId&statusEnumId=1&access_token=$accessToken",
         ),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
 
-        final user = data["data"][0];
+        final data =
+            jsonDecode(response.body);
 
-        _walletBalance = double.tryParse(user["walletAmount"].toString()) ?? 0;
+        final user =
+            data["data"][0];
+
+        _walletBalance =
+            double.tryParse(
+                  user["walletAmount"]
+                      .toString(),
+                ) ??
+                0;
 
         _depositBalance =
-            double.tryParse(user["depositAmount"].toString()) ?? 0;
+            double.tryParse(
+                  user["depositAmount"]
+                      .toString(),
+                ) ??
+                0;
 
-        _extraCharges = double.tryParse(user["extraCharges"].toString()) ?? 0;
+        _extraCharges =
+            double.tryParse(
+                  user["extraCharges"]
+                      .toString(),
+                ) ??
+                0;
 
         return true;
       }
 
       return false;
+
     } catch (e) {
-      print("Wallet Fetch Error: $e");
+
+      print(
+        "Wallet Fetch Error: $e",
+      );
 
       return false;
     }
@@ -79,42 +114,70 @@ class WalletService {
   // =========================
 
   Future<bool> fetchTransactions() async {
+
     try {
-      final response = await http.get(
+
+      final response =
+          await http.get(
+
         Uri.parse(
           "$baseUrl/getLatestTransactionList?id=$userId&access_token=$accessToken",
         ),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
 
-        List<dynamic> list = data["data"];
+        final data =
+            jsonDecode(response.body);
 
-        _transactions = list.map((item) {
+        List<dynamic> list =
+            data["data"];
+
+        _transactions =
+            list.map((item) {
+
           return {
-            "title": item["transactionType"] ?? "Transaction",
 
-            "amount": item["amount"] ?? 0,
+            "title":
+                item["transactionType"] ??
+                    "Transaction",
 
-            "paymentId": item["payment_id"] ?? "",
+            "amount":
+                item["amount"] ?? 0,
 
-            "orderNumber": item["order_no"] ?? "",
+            "paymentId":
+                item["payment_id"] ??
+                    "",
 
-            "type": item["transactionType"] ?? "credit",
+            "orderNumber":
+                item["order_no"] ??
+                    "",
 
-            "time": item["createdAt"] ?? "",
+            "type":
+                item["transactionType"] ??
+                    "credit",
 
-            "rideId": item["ride_booking_id"] ?? "",
+            "time":
+                item["createdAt"] ??
+                    "",
+
+            "rideId":
+                item["ride_booking_id"] ??
+                    "",
           };
+
         }).toList();
 
         return true;
       }
 
       return false;
+
     } catch (e) {
-      print("Transaction Fetch Error: $e");
+
+      print(
+        "Transaction Fetch Error: $e",
+      );
 
       return false;
     }
@@ -124,33 +187,61 @@ class WalletService {
   // CREATE RECHARGE ORDER
   // =========================
 
-  Future<Map<String, dynamic>?> createRechargeOrder(double amount) async {
+  Future<Map<String, dynamic>?>
+      createRechargeOrder(
+    double amount,
+  ) async {
+
     try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/api/v1/order?access_token=$accessToken"),
 
-        headers: {"Content-Type": "application/json"},
+      final response =
+          await http.post(
 
-        body: jsonEncode({"amount": amount}),
+        Uri.parse(
+          "$baseUrl/api/v1/order?access_token=$accessToken",
+        ),
+
+        headers: {
+
+          "Content-Type":
+              "application/json",
+        },
+
+        body: jsonEncode({
+
+          "amount":
+              amount,
+        }),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+
+        final data =
+            jsonDecode(response.body);
 
         return {
-          "orderId": data["order_id"],
 
-          "key": data["key_id"],
+          "orderId":
+              data["order_id"],
 
-          "mode": data["mode"],
+          "key":
+              data["key_id"],
 
-          "raw": data,
+          "mode":
+              data["mode"],
+
+          "raw":
+              data,
         };
       }
 
       return null;
+
     } catch (e) {
-      print("Create Order Error: $e");
+
+      print(
+        "Create Order Error: $e",
+      );
 
       return null;
     }
@@ -161,36 +252,59 @@ class WalletService {
   // =========================
 
   Future<bool> verifyPayment({
+
     required String orderId,
 
     required String paymentId,
 
     required String signature,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/api/v1/verifyPayment?access_token=$accessToken"),
 
-        headers: {"Content-Type": "application/json"},
+    try {
+
+      final response =
+          await http.post(
+
+        Uri.parse(
+          "$baseUrl/api/v1/verifyPayment?access_token=$accessToken",
+        ),
+
+        headers: {
+
+          "Content-Type":
+              "application/json",
+        },
 
         body: jsonEncode({
-          "razorpay_order_id": orderId,
 
-          "razorpay_payment_id": paymentId,
+          "razorpay_order_id":
+              orderId,
 
-          "razorpay_signature": signature,
+          "razorpay_payment_id":
+              paymentId,
+
+          "razorpay_signature":
+              signature,
         }),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
 
-        return data["signatureIsValid"] == true;
+        final data =
+            jsonDecode(response.body);
+
+        return data[
+                "signatureIsValid"] ==
+            true;
       }
 
       return false;
+
     } catch (e) {
-      print("Verify Payment Error: $e");
+
+      print(
+        "Verify Payment Error: $e",
+      );
 
       return false;
     }
@@ -200,21 +314,34 @@ class WalletService {
   // GET ALL PAYMENTS
   // =========================
 
-  Future<List<dynamic>> getAllPayments() async {
+  Future<List<dynamic>>
+      getAllPayments() async {
+
     try {
-      final response = await http.get(
-        Uri.parse("$baseUrl/api/v1/getAllPayments?access_token=$accessToken"),
+
+      final response =
+          await http.get(
+
+        Uri.parse(
+          "$baseUrl/api/v1/getAllPayments?access_token=$accessToken",
+        ),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+
+        final data =
+            jsonDecode(response.body);
 
         return data["data"] ?? [];
       }
 
       return [];
+
     } catch (e) {
-      print("Get Payments Error: $e");
+
+      print(
+        "Get Payments Error: $e",
+      );
 
       return [];
     }
@@ -224,21 +351,43 @@ class WalletService {
   // WITHDRAW REQUEST
   // =========================
 
-  Future<bool> requestWithdraw(double amount) async {
+  Future<bool> requestWithdraw(
+    double amount,
+  ) async {
+
     try {
-      final response = await http.post(
+
+      final response =
+          await http.post(
+
         Uri.parse(
           "$baseUrl/getWithdrawRequestFromUser?access_token=$accessToken",
         ),
 
-        headers: {"Content-Type": "application/json"},
+        headers: {
 
-        body: jsonEncode({"id": userId, "amount": amount}),
+          "Content-Type":
+              "application/json",
+        },
+
+        body: jsonEncode({
+
+          "id":
+              userId,
+
+          "amount":
+              amount,
+        }),
       );
 
-      return response.statusCode == 200;
+      return response.statusCode ==
+          200;
+
     } catch (e) {
-      print("Withdraw Error: $e");
+
+      print(
+        "Withdraw Error: $e",
+      );
 
       return false;
     }
@@ -248,21 +397,31 @@ class WalletService {
   // DEDUCT RIDE FARE
   // =========================
 
-  bool deductMoney(double amount) {
+  bool deductMoney(
+    double amount,
+  ) {
+
     if (_walletBalance < amount) {
+
       return false;
     }
 
     _walletBalance -= amount;
 
     _transactions.insert(0, {
-      "title": "Ride Payment",
 
-      "amount": amount,
+      "title":
+          "Ride Payment",
 
-      "type": "debit",
+      "amount":
+          amount,
 
-      "time": DateTime.now().toString(),
+      "type":
+          "debit",
+
+      "time":
+          DateTime.now()
+              .toString(),
     });
 
     return true;
