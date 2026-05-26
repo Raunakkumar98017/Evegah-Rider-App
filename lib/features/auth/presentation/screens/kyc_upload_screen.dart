@@ -401,11 +401,11 @@ class VerificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-
-        MaterialPageRoute(builder: (context) => const MainNavigation()),
-      );
+      Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(builder: (context) => const MainNavigation()),
+  (route) => false, // 🚨 This tells Flutter to destroy every previous screen!
+);
     });
 
     return Scaffold(
