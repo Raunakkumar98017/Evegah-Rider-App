@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:http/http.dart' as http; // 🚨 Added HTTP package
-
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart'; // 🚨 Added for real token
 import 'unlocking_screen.dart';
 
 class ScanQrScreen extends StatefulWidget {
@@ -16,9 +16,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
   final MobileScannerController controller = MobileScannerController();
   late AnimationController animationController;
   late Animation<double> animation;
+  
   bool flashOn = false;
   bool scanned = false;
-  bool isProcessingApi = false; // 🚨 Tracks if the API is loading
+  bool isProcessingApi = false;
 
   @override
   void initState() {
@@ -27,6 +28,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+    
     animation = Tween<double>(begin: 0, end: 250).animate(animationController);
   }
 
@@ -37,9 +39,9 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  // 🚨 THE NEW API INTEGRATION
+  // 🚨 THE FIXED API INTEGRATION
   Future<void> _verifyAndUnlock(String code, {required bool isManual}) async {
-    // 1. MAGIC TEST BYPASS: Skip API and go straight to unlock screen
+    // 1. MAGIC TEST BYPASS
     if (code.toUpperCase() == "TEST123") {
       Navigator.pop(context); // Close dialog or bottom sheet
       Navigator.pushReplacement(
@@ -54,13 +56,19 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
     });
 
     try {
-      // 2. CALL THE REAL API
+      // 🚨 GET THE REAL TOKEN
+      final prefs = await SharedPreferences.getInstance();
+      final String? token = prefs.getString('access_token');
+      
+      if (token == null || token.isEmpty) throw Exception("User not logged in");
+
+      // 2. CALL THE REAL API (Fixed URL spelling!)
       final response = await http.post(
-        Uri.parse('https://admin.evegah.com/api/qrDecrypted?access_token=YOUR_REAL_TOKEN_HERE'),
+        Uri.parse('https://admin.evegah.com/api/qrDecrypted?access_token=$token'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "qrString": isManual ? null : code,
-          "userId": 123, // 🚨 Replace with real User ID
+          "userId": 0, // Keep 0 if backend handles it via token
           "lockNumber": isManual ? code : null
         }),
       );
@@ -73,13 +81,16 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
           final realLockNumber = decoded['data'][0]['lockNumber'];
           
           if (!mounted) return;
-          Navigator.pop(context); // Close dialog/sheet
+          
+          // If coming from manual entry, pop the bottom sheet
+          if (isManual) Navigator.pop(context); 
+          
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => UnlockingScreen(vehicleId: realLockNumber)),
+            MaterialPageRoute(builder: (context) => UnlockingScreen(vehicleId: realLockNumber.toString())),
           );
         } else {
-          throw Exception("Invalid QR Code");
+          throw Exception("Vehicle not found");
         }
       } else {
         throw Exception("Server Error");
@@ -87,7 +98,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid Vehicle QR or ID. Please try again.")),
+        const SnackBar(content: Text("Invalid Vehicle QR or ID. Please try again."), backgroundColor: Colors.red),
       );
       setState(() {
         scanned = false; // Allow them to scan again
@@ -103,11 +114,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
 
   void onDetectBarcode(BarcodeCapture capture) {
     if (scanned || isProcessingApi) return;
-
+    
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
       final String code = barcode.rawValue ?? "";
-
       if (code.isNotEmpty) {
         setState(() {
           scanned = true;
@@ -120,7 +130,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
           builder: (context) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text("Vehicle Found 🚀"),
+              title: const Text("Vehicle Found"),
               content: const Text("Would you like to unlock this vehicle?"),
               actions: [
                 TextButton(
@@ -130,17 +140,19 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                     });
                     Navigator.pop(context);
                   },
-                  child: const Text("Cancel"),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
                 ),
                 ElevatedButton(
-                  onPressed: () => _verifyAndUnlock(code, isManual: false),
-                  child: isProcessingApi 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text("Unlock"),
+                  onPressed: () async {
+                    Navigator.pop(context); // Close dialog
+                    await _verifyAndUnlock(code, isManual: false);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  child: const Text("Unlock", style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
-          },
+          }
         );
         break;
       }
@@ -192,7 +204,12 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                     width: 280, height: 280,
                     child: Stack(
                       children: [
-                        Container(decoration: BoxDecoration(border: Border.all(color: Colors.green, width: 4), borderRadius: BorderRadius.circular(24))),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.green, width: 4), 
+                            borderRadius: BorderRadius.circular(24)
+                          )
+                        ),
                         AnimatedBuilder(
                           animation: animation,
                           builder: (context, child) {
@@ -206,7 +223,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                                 ),
                               ),
                             );
-                          },
+                          }
                         ),
                       ],
                     ),
@@ -215,8 +232,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                 const SizedBox(height: 30),
                 const Text("Point camera toward EV QR sticker", style: TextStyle(color: Colors.white70, fontSize: 16)),
                 const SizedBox(height: 40),
-                
-                // --- MANUAL ENTRY BUTTON ---
+                // MANUAL ENTRY BUTTON
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: SizedBox(
@@ -235,7 +251,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                               child: SingleChildScrollView(
                                 child: Padding(
                                   padding: const EdgeInsets.all(24),
-                                  child: StatefulBuilder( // StatefulBuilder to handle loading state inside bottom sheet
+                                  child: StatefulBuilder(
                                     builder: (BuildContext context, StateSetter setModalState) {
                                       return Column(
                                         mainAxisSize: MainAxisSize.min,
@@ -255,7 +271,6 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                                             child: ElevatedButton(
                                               onPressed: isProcessingApi ? null : () async {
                                                 setModalState(() => isProcessingApi = true);
-                                                // 🚨 Trigger API with manual true
                                                 await _verifyAndUnlock(vehicleController.text, isManual: true);
                                                 setModalState(() => isProcessingApi = false);
                                               },
@@ -263,11 +278,12 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                                                 backgroundColor: Colors.green,
                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                                               ),
-                                              child: isProcessingApi 
+                                              child: isProcessingApi
                                                   ? const CircularProgressIndicator(color: Colors.white)
                                                   : const Text("Unlock Vehicle", style: TextStyle(color: Colors.white, fontSize: 18)),
                                             ),
                                           ),
+                                          const SizedBox(height: 20),
                                         ],
                                       );
                                     }
@@ -275,10 +291,13 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                                 ),
                               ),
                             );
-                          },
+                          }
                         );
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green, 
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))
+                      ),
                       icon: const Icon(Icons.keyboard, color: Colors.white),
                       label: const Text("Enter Vehicle ID Manually", style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
@@ -288,6 +307,13 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
               ],
             ),
           ),
+          if (isProcessingApi)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.green),
+              ),
+            )
         ],
       ),
     );

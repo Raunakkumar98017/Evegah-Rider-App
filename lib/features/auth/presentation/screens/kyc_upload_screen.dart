@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
-import '../../../dashboard/presentation/screens/dashboard_screen.dart';
+//import '../../../dashboard/presentation/screens/dashboard_screen.dart';
+import '../../../dashboard/presentation/screens/main_navigation.dart';
 
 class KycUploadScreen extends StatefulWidget {
   const KycUploadScreen({super.key});
@@ -403,7 +404,7 @@ class VerificationScreen extends StatelessWidget {
       Navigator.pushReplacement(
         context,
 
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
       );
     });
 

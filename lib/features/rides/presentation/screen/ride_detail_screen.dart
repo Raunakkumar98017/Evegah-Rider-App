@@ -3,7 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'feedback_bottom_sheet.dart';
+import '../../widgets/feedback_bottom_sheet.dart';
 
 class RideDetailScreen extends StatefulWidget {
   final Map<String, dynamic> rideData;

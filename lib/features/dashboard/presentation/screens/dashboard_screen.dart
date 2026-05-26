@@ -4,7 +4,7 @@ import 'map_discovery_screen.dart';
 import '../../../auth/presentation/screens/create_profile_screen.dart';
 import '../../../unlock/presentation/screens/bluetooth_unlock_screen.dart';
 import '../../../unlock/presentation/screens/scan_qr_screen.dart';
-import '/features/unlock/presentation/screens/ride_history_screen.dart';
+import '../../../rides/presentation/screen/ride_history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});

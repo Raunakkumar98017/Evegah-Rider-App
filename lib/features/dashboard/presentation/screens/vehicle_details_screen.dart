@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../../../core/services/session_service.dart';
-import '../../../../core/constants/app_constants.dart';
+import 'package:url_launcher/url_launcher.dart'; // 🚨 ADDED for Navigation
+import '../../../unlock/presentation/screens/scan_qr_screen.dart'; // 🚨 ADDED for Scanner
+import '../../data/services/dashboard_service.dart';
 
 class VehicleDetailsScreen extends StatefulWidget {
-  final String vehicleId; // This is the lockNumber passed from the Map
+  final String vehicleId; 
 
   const VehicleDetailsScreen({super.key, required this.vehicleId});
 
@@ -14,9 +13,12 @@ class VehicleDetailsScreen extends StatefulWidget {
 }
 
 class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
+  final DashboardService _dashboardService = DashboardService();
+
   bool _isLoading = true;
   String? _errorMessage;
   Map<String, dynamic>? _vehicleData;
+  double _walletBalance = 0.0; // 🚨 ADDED state for Wallet
 
   @override
   void initState() {
@@ -24,88 +26,45 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     _fetchLiveVehicleDetails();
   }
 
-  // 🚨 THE API CHAINING MAGIC
   Future<void> _fetchLiveVehicleDetails() async {
     try {
-      final SessionService sessionService = SessionService();
-      String? savedToken = await sessionService.getToken();
-
-      if (savedToken == null || savedToken.isEmpty) {
-        setState(() {
-          _errorMessage = "Authentication error. Please log in again.";
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // ==========================================
-      // CHAIN LINK 1: Get the Secret JSON Object
-      // ==========================================
-      final qrDecryptedUri = Uri.parse("${AppConstants.decryptQr}?access_token=$savedToken");
+      // 🚨 ASK THE CHEF for both the Vehicle AND the Wallet Balance!
+      final data = await _dashboardService.fetchLiveVehicleDetails(widget.vehicleId);
+      final balance = await _dashboardService.fetchWalletBalance();
       
-      final qrResponse = await http.post(
-        qrDecryptedUri,
-        headers: {"Content-Type": "application/json"},
-        // Using manual search logic: qrString is null, lockNumber has the ID
-        body: jsonEncode({
-          "qrString": null,
-          "userId": 0, // Assuming 0 is safe for a generic search if we don't have the userId handy
-          "lockNumber": widget.vehicleId 
-        }),
-      );
-
-      if (qrResponse.statusCode != 200) {
-        throw Exception("Failed to find vehicle on server.");
-      }
-
-      final qrDecoded = json.decode(qrResponse.body);
-      if (qrDecoded['data'] == null || qrDecoded['data'].isEmpty) {
-         throw Exception("Vehicle not found in database.");
-      }
-
-      // Grab the specific secret object and turn it into a string!
-      final secretJsonObject = qrDecoded['data'][0];
-      final String jsonStringifiedDetails = jsonEncode(secretJsonObject);
-
-
-      // ==========================================
-      // CHAIN LINK 2: Get the Full Vehicle Model
-      // ==========================================
-      final getModelParams = {
-        'VehicleId': jsonStringifiedDetails,
-        'statusEnumId': '1',
-        'access_token': savedToken,
-      };
-
-      final getModelUri = Uri.parse(AppConstants.getVehicleModel).replace(queryParameters: getModelParams);
-      final modelResponse = await http.get(getModelUri);
-
-      if (modelResponse.statusCode != 200) {
-        throw Exception("Failed to load vehicle details.");
-      }
-
-      final modelDecoded = json.decode(modelResponse.body);
-      if (modelDecoded['data'] != null && modelDecoded['data'].isNotEmpty) {
+      if (mounted) {
         setState(() {
-          _vehicleData = modelDecoded['data'][0]; // Save the real data!
+          _vehicleData = data;
+          _walletBalance = balance; // Save the wallet balance
           _isLoading = false;
         });
-      } else {
-         throw Exception("No model data returned.");
       }
-
     } catch (e) {
-      debugPrint("API Chain Error: $e");
-      setState(() {
-        _errorMessage = "Could not load live vehicle data.";
-        _isLoading = false;
-      });
+      debugPrint("Error fetching vehicle details: $e");
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll("Exception: ", "");
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // 🚨 ADDED: Navigation Engine specifically for this bike
+  Future<void> _launchDirections(double lat, double lng) async {
+    // This creates a direct route to the bike's exact GPS coordinates
+    final String googleMapsUrl = "http://maps.google.com/maps?daddr=$lat,$lng";
+    final Uri uri = Uri.parse(googleMapsUrl);
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint("Could not open maps application.");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 1. Show Spinner while chaining APIs
     if (_isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFF8F9FE),
@@ -114,7 +73,6 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       );
     }
 
-    // 2. Show Error if the chain breaks
     if (_errorMessage != null || _vehicleData == null) {
       return Scaffold(
         backgroundColor: const Color(0xFFF8F9FE),
@@ -126,24 +84,32 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
       );
     }
 
-   // 3. EXTRACT THE LIVE DATA FROM THE RESPONSE
     final String model = _vehicleData!['modelName']?.toString() ?? "Unknown";
-    
-    // 🚨 BULLETPROOF PARSING ADDED HERE
     final int range = int.tryParse(_vehicleData!['maxRangeOn100PercentageBatteryKM']?.toString() ?? '0') ?? 0;
     
-    // Safety checks because nested arrays can sometimes be null
     int battery = 0;
+    double bikeLat = 0.0;
+    double bikeLng = 0.0;
+
+    // Pulling the live telemetry data (Battery + GPS)
     if (_vehicleData!['lockDetails'] != null && _vehicleData!['lockDetails'].isNotEmpty) {
-       // 🚨 BULLETPROOF PARSING ADDED HERE
        battery = int.tryParse(_vehicleData!['lockDetails'][0]['battery']?.toString() ?? '0') ?? 0;
+       
+       // 🚨 Extracting the bike's exact coordinates for the Navigate button
+       bikeLat = double.tryParse(_vehicleData!['lockDetails'][0]['latitude']?.toString() ?? '0') ?? 0.0;
+       bikeLng = double.tryParse(_vehicleData!['lockDetails'][0]['longitude']?.toString() ?? '0') ?? 0.0;
+    }
+
+    // Fallback if the GPS is stored in the main vehicle object instead of the lock details
+    if (bikeLat == 0.0) {
+       bikeLat = double.tryParse(_vehicleData!['latitude']?.toString() ?? '0') ?? 0.0;
+       bikeLng = double.tryParse(_vehicleData!['longitude']?.toString() ?? '0') ?? 0.0;
     }
 
     double fare = 0.0;
     int minHire = 0;
     if (_vehicleData!['farePlanData'] != null && _vehicleData!['farePlanData'].isNotEmpty) {
        fare = double.tryParse(_vehicleData!['farePlanData'][0]['todaysRate']?.toString() ?? '0') ?? 0.0;
-       // 🚨 BULLETPROOF PARSING ADDED HERE
        minHire = int.tryParse(_vehicleData!['farePlanData'][0]['minimumHireMinuts']?.toString() ?? '0') ?? 0;
     }
 
@@ -183,7 +149,6 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // 1. THE VEHICLE IMAGE SECTION
                   Container(
                     width: double.infinity,
                     height: 200,
@@ -200,14 +165,11 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                           height: 140,
                           decoration: BoxDecoration(color: Colors.purple.shade50, shape: BoxShape.circle),
                         ),
-                        // Replace with Image.asset if you have the .webp ready!
                         const Icon(Icons.electric_scooter, size: 100, color: Color(0xFF1E1452)),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // 2. Vehicle Identity Card
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -236,8 +198,6 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // 3. The 6-Item Grid
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
@@ -251,15 +211,14 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                       _buildInfoCard(Icons.map_outlined, Colors.orange, "MAX RANGE", "$range km"),
                       _buildInfoCard(Icons.bolt, Colors.red, "FARE/MIN", "₹$fare"),
                       _buildInfoCard(Icons.hourglass_bottom, Colors.purple, "MIN HIRE", "$minHire Min"),
-                      _buildInfoCard(Icons.account_balance_wallet, Colors.pink, "WALLET", "₹0.00"), // We will link the wallet API later!
+                      // 🚨 DYNAMIC WALLET DISPLAY
+                      _buildInfoCard(Icons.account_balance_wallet, Colors.pink, "WALLET", "₹${_walletBalance.toStringAsFixed(2)}"), 
                     ],
                   ),
                 ],
               ),
             ),
           ),
-
-          // 4. STICKY BOTTOM ACTION BAR
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
@@ -272,7 +231,16 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 Expanded(
                   flex: 1,
                   child: OutlinedButton(
-                    onPressed: () { },
+                    // 🚨 WIRED UP: NAVIGATE BUTTON
+                    onPressed: () {
+                      if (bikeLat != 0.0 && bikeLng != 0.0) {
+                        _launchDirections(bikeLat, bikeLng);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Exact vehicle location is currently unavailable.")),
+                        );
+                      }
+                    },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -292,7 +260,13 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 Expanded(
                   flex: 1, 
                   child: ElevatedButton(
-                    onPressed: () { },
+                    // 🚨 WIRED UP: START RIDE BUTTON
+                    onPressed: () { 
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ScanQrScreen()),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       backgroundColor: const Color(0xFF1E1452),

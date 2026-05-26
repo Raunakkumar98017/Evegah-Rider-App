@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../data/services/ride_service.dart'; // 🚨 Imported our Chef!
 
 class FeedbackBottomSheet extends StatefulWidget {
-  final String rideId;
-
+  final String rideId; // Currently passing vehicleId/rideId string
   const FeedbackBottomSheet({super.key, required this.rideId});
 
   @override
@@ -13,34 +13,43 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
   int _rating = 0;
   final List<String> _selectedIssues = [];
   final TextEditingController _commentController = TextEditingController();
-  bool _isSubmitting = false;
+  bool isSubmitting = false;
 
   // The predefined tags for the mechanics
   final List<String> _complaintTags = [
-    "🪫 Battery Issue",
-    "🛑 Brakes Loose",
-    "📱 App Glitch",
-    "⚙️ Motor/Speed",
-    "🧹 Dirty Vehicle",
-    "🛞 Flat Tire"
+    "Battery Issue",
+    "Brakes Loose",
+    "App Glitch",
+    "Motor/Speed",
+    "Dirty Vehicle",
+    "Flat Tire"
   ];
 
+  // 🚨 CLEAN ARCHITECTURE: The UI just calls the service!
   Future<void> _submitFeedback() async {
-    setState(() => _isSubmitting = true);
+    setState(() => isSubmitting = true);
 
-    // 🚨 MOCK API CALL: Here you would POST the data to your backend
-    await Future.delayed(const Duration(seconds: 2));
+    bool success = await RideService().submitFeedback(
+      vehicleId: widget.rideId,
+      rideBookingId: 456, // TODO: Pass this dynamically from the active ride
+      rating: _rating,
+      issues: _selectedIssues,
+      comment: _commentController.text,
+    );
 
     if (!mounted) return;
-    
-    // Close the sheet and show a thank you message
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Feedback submitted successfully! Thank you. 💚"),
-        backgroundColor: Colors.green,
-      ),
-    );
+    setState(() => isSubmitting = false);
+
+    if (success) {
+      Navigator.pop(context); // Close the sheet
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Feedback submitted successfully! Thank you."), backgroundColor: Colors.green),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to submit feedback. Please try again."), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -70,13 +79,12 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
               decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
             ),
             const SizedBox(height: 24),
-
-            Text(
+            const Text(
               "How was your ride?",
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
             ),
             const SizedBox(height: 8),
-            Text("Ride ID: ${widget.rideId}", style: const TextStyle(color: Colors.grey)),
+            Text("Vehicle ID: ${widget.rideId}", style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 24),
 
             // --- THE STARS ---
@@ -103,7 +111,6 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
             const SizedBox(height: 24),
 
             // --- THE SMART COMPLAINT EXPANSION ---
-            // AnimatedSize makes it slide open smoothly instead of snapping
             AnimatedSize(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
@@ -115,8 +122,6 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                         const SizedBox(height: 16),
                         const Text("What went wrong?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 12),
-                        
-                        // The tappable tags
                         Wrap(
                           spacing: 8, runSpacing: 8,
                           children: _complaintTags.map((tag) {
@@ -138,10 +143,10 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                         const SizedBox(height: 20),
                       ],
                     )
-                  : const SizedBox.shrink(), // Takes up 0 space if not a complaint
+                  : const SizedBox.shrink(),
             ),
 
-            // --- TEXT FEEDBACK (Always visible after a rating is picked) ---
+            // --- TEXT FEEDBACK ---
             if (_rating > 0) ...[
               TextField(
                 controller: _commentController,
@@ -163,12 +168,12 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitFeedback,
+                  onPressed: isSubmitting ? null : _submitFeedback,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: _isSubmitting
+                  child: isSubmitting
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text("Submit Feedback", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 ),

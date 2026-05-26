@@ -1,18 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
+
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'
     hide ClusterManager, Cluster;
-import 'package:http/http.dart' as http;
-import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart'; // 🚨 ADDED CLUSTER PACKAGE
+import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../../core/services/session_service.dart';
 import '../screens/vehicle_details_screen.dart';
-import '../../../../core/constants/app_constants.dart';
+
+// 🚨 ADDED: The new Dashboard Chef!
+import '../../data/services/dashboard_service.dart'; 
 
 class MapDiscoveryScreen extends StatefulWidget {
   const MapDiscoveryScreen({super.key});
@@ -22,6 +22,9 @@ class MapDiscoveryScreen extends StatefulWidget {
 }
 
 class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
+  // 🚨 HIRE THE CHEF
+  final DashboardService _dashboardService = DashboardService();
+
   // 🚨 DISTANCE FILTER VARIABLES
   double _selectedRadiusKm = 11.0; // Default to max 10km
   Position?
@@ -105,7 +108,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   }
 
   // 🚨 AUTOMATIC STARTUP RADAR
-  // 🚨 UPDATED STARTUP RADAR
   Future<void> _locateUserAndCheckZones() async {
     // 1. Get User Location quietly
     Position? userPos = await _getUserLocation();
@@ -171,17 +173,9 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
   @override
   void initState() {
-
     super.initState();
-
-    // INIT CLUSTER
-    _clusterManager =
-        _initClusterManager();
-
-    // LOAD MAP DATA
+    _clusterManager = _initClusterManager();
     _startupSequence();
-
-    // AUTO REFRESH
     _startAutoRefreshEngine();
   }
 
@@ -227,31 +221,23 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       markerId: MarkerId(cluster.getId()),
       position: cluster.location,
       onTap: () async {
-        // --- THE NEW SMART ZOOM LOGIC ---
         if (cluster.isMultiple) {
           final GoogleMapController? controller = _mapController;
           if (controller == null) return;
 
-          // 1. Find the edges of the hidden pins
           double minLat = cluster.items.first.location.latitude;
           double maxLat = cluster.items.first.location.latitude;
           double minLng = cluster.items.first.location.longitude;
           double maxLng = cluster.items.first.location.longitude;
 
           for (var item in cluster.items) {
-            if (item.location.latitude < minLat)
-              minLat = item.location.latitude;
-            if (item.location.latitude > maxLat)
-              maxLat = item.location.latitude;
-            if (item.location.longitude < minLng)
-              minLng = item.location.longitude;
-            if (item.location.longitude > maxLng)
-              maxLng = item.location.longitude;
+            if (item.location.latitude < minLat) minLat = item.location.latitude;
+            if (item.location.latitude > maxLat) maxLat = item.location.latitude;
+            if (item.location.longitude < minLng) minLng = item.location.longitude;
+            if (item.location.longitude > maxLng) maxLng = item.location.longitude;
           }
 
-          // 2. Zoom to fit the box exactly
           if (minLat == maxLat && minLng == maxLng) {
-            // Fallback if they are perfectly on top of each other
             controller.animateCamera(
               CameraUpdate.newLatLngZoom(
                 cluster.location,
@@ -259,26 +245,22 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
               ),
             );
           } else {
-            // The perfect bounding box
             final LatLngBounds bounds = LatLngBounds(
               southwest: LatLng(minLat, minLng),
               northeast: LatLng(maxLat, maxLng),
             );
             controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
           }
-        }
-        // --- END SMART ZOOM LOGIC ---
-        else {
-          // SHOW BOTTOM SHEET for single zone tap
+        } else {
           _showZoneVehiclesSheet(context, cluster.items.first.rawData);
         }
       },
       icon: cluster.isMultiple
           ? await _getClusterIcon(cluster.count)
           : _customZoneMarker ??
-                BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueViolet,
-                ),
+              BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueViolet,
+              ),
     );
   }
 
@@ -330,13 +312,14 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
   Future<void> _silentRefreshData() async {
     try {
-      final liveZones = await _fetchLiveZonesFromApi();
+      // 🚨 ASK THE CHEF!
+      final liveZones = await _dashboardService.fetchLiveZonesFromApi();
       if (liveZones.isNotEmpty && mounted) {
         _allLiveZones = liveZones;
         _applyFilters();
       }
     } catch (e) {
-      print("Background refresh failed silently: $e");
+      debugPrint("Background refresh failed silently: $e");
     }
   }
 
@@ -361,7 +344,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
     setState(() => _markers = {});
 
-    final liveZones = await _fetchLiveZonesFromApi();
+    // 🚨 ASK THE CHEF!
+    final liveZones = await _dashboardService.fetchLiveZonesFromApi();
 
     if (liveZones.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -370,65 +354,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     } else {
       _allLiveZones = liveZones;
       _applyFilters();
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchLiveZonesFromApi() async {
-    try {
-      final SessionService sessionService = SessionService();
-      String? savedToken = await sessionService.getToken();
-
-      if (savedToken == null || savedToken.isEmpty) {
-        debugPrint("ERROR: No token found. User might not be logged in.");
-        return [];
-      }
-
-      final queryParams = {
-        'zoneId': '0',
-        'mapCityId': '0',
-        'mapCountryName': 'India',
-        'mapStateName': 'Gujarat',
-        'mapCityName': 'Vadodara',
-        'dataFor': 'ForMapSearch',
-        'access_token': savedToken,
-      };
-
-      final uri = Uri.parse(
-        AppConstants.getLiveZones,
-      ).replace(queryParameters: queryParams);
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final decodedData = json.decode(response.body);
-        List<dynamic> zonesList = decodedData['data'] ?? decodedData;
-        List<Map<String, dynamic>> mappedZones = [];
-
-        for (var item in zonesList) {
-          double lat =
-              double.tryParse(item['latitude']?.toString() ?? '0') ?? 0.0;
-          double lng =
-              double.tryParse(item['longitude']?.toString() ?? '0') ?? 0.0;
-
-          if (lat != 0.0 && lng != 0.0) {
-            mappedZones.add({
-              'id': item['zoneId']?.toString() ?? DateTime.now().toString(),
-              'center': LatLng(lat, lng),
-              'zoneName': item['zoneName'],
-              'zone_address': item['zone_address'],
-              'bikeCount': item['bikeCount'],
-              'vehicles':
-                  item['vehicles'] ?? item['avaialableBikeListData'] ?? [],
-            });
-          }
-        }
-        return mappedZones;
-      } else {
-        debugPrint("API Failed: ${response.statusCode}");
-        return [];
-      }
-    } catch (e) {
-      debugPrint("Network Error: $e");
-      return [];
     }
   }
 
@@ -476,7 +401,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     bool isFilterActive = _minBatteryLevel > 0;
 
     for (var zone in _allLiveZones) {
-      // 🚨 ADD THIS NEW DISTANCE CHECK
       if (_currentUserPosition != null && _selectedRadiusKm < 11.0) {
         final center = zone['center'] as LatLng?;
         if (center != null) {
@@ -487,7 +411,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             center.longitude,
           );
 
-          // If the distance is greater than what the user selected on the slider, skip this zone!
           if (dist > _selectedRadiusKm) {
             continue;
           }
@@ -517,7 +440,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       }
     }
 
-    // 🚨 SEND DATA TO CLUSTER MANAGER INSTEAD OF DIRECTLY TO MARKERS
     setState(() {
       _clusterItems = filteredZones
           .map(
@@ -531,14 +453,10 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
       _clusterManager.setItems(_clusterItems);
     });
-    // Check if the map is empty AND if the button was clicked
+    
     if (showAlert) {
-      // NOTE: Change '_markers.isEmpty' to whatever variable you use to
-      // hold your map pins or filtered zones.
       bool isMapEmpty = _markers.isEmpty;
-
       if (isMapEmpty) {
-        // Wait 300 milliseconds for the Bottom Sheet to close before showing the alert
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             _showNoZonesAlert(context);
@@ -561,7 +479,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
-      // 🚨 THE NEW CONDITIONAL BODY
       body: _isLocatingUser
           ? const Center(
               child: Column(
@@ -578,15 +495,12 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             )
           : Stack(
               children: [
-                // A. THE MAP BASE
                 GoogleMap(
                   initialCameraPosition: _initialCameraPosition,
                   markers: _markers,
                   onMapCreated: (GoogleMapController controller) {
                     _mapController = controller;
-                    // 🚨 LINK MANAGER TO THE MAP
                     _clusterManager.setMapId(controller.mapId);
-                    // Trigger cluster update after map is ready
                     if (_clusterItems.isNotEmpty) {
                       _clusterManager.setItems(_clusterItems);
                     }
@@ -594,17 +508,15 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                       setState(() => _mapReady = true);
                     }
                   },
-                  // 🚨 ADD THESE TWO LINES FOR CLUSTERING
                   onCameraMove: _clusterManager.onCameraMove,
                   onCameraIdle: _clusterManager.updateMap,
                   zoomControlsEnabled: false,
-                  myLocationEnabled: _hasLocationPermission, //THIS: Turns on the glowing blue dot!
+                  myLocationEnabled: _hasLocationPermission,
                   myLocationButtonEnabled: false,
                   compassEnabled: false,
                   mapToolbarEnabled: false,
                 ),
 
-                // B. UI OVERLAYS (Hamburger & Filter)
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -651,9 +563,9 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                               Icons.tune,
                               color:
                                   _minBatteryLevel > 0 ||
-                                      _selectedVehicleType != "All"
-                                  ? Colors.purple
-                                  : Colors.black87,
+                                          _selectedVehicleType != "All"
+                                      ? Colors.purple
+                                      : Colors.black87,
                             ),
                             onPressed: () {
                               _showFilterSheet(context);
@@ -665,7 +577,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                   ),
                 ),
 
-                // C. SCAN BUTTON
                 Positioned(
                   bottom: 24,
                   left: 20,
@@ -675,9 +586,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                     width: double.infinity,
 
                     child: ElevatedButton(
-                      // 🚨 THE NEW ONPRESSED LOGIC
                       onPressed: () async {
-                        // 1. Show a loading message
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
@@ -687,23 +596,18 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           ),
                         );
 
-                        // 2. Ping GPS
                         Position? userPos = await _getUserLocation();
-                        if (userPos == null) return; // Stop if GPS failed
+                        if (userPos == null) return; 
 
-                        // 3. The Radar Sieve
                         Map<String, dynamic>? closestZone;
                         double minDistance = double.infinity;
 
                         for (var zone in _allLiveZones) {
-                          // Use your master list
-                          // Skip zones with no bikes
                           if (zone['vehicles']?.isEmpty ?? true) continue;
 
                           final center = zone['center'] as LatLng?;
                           if (center == null) continue;
 
-                          // Calculate distance from user to this zone
                           double dist = _calculateDistance(
                             userPos.latitude,
                             userPos.longitude,
@@ -717,20 +621,14 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           }
                         }
 
-                        // --- RADAR SIEVE FINISHES HERE ---
+                        double maxAllowedDistanceInKm = 10.0; 
 
-                        // 🚨 THE REALITY CHECK: Define what "Nearby" actually means
-                        double maxAllowedDistanceInKm = 10.0; // 10 kilometers
-
-                        // 4. The Flight & Reveal (UPGRADED)
-                        // Check if we found a zone AND if it is actually close to the user
                         if (closestZone != null &&
                             minDistance <= maxAllowedDistanceInKm) {
                           final targetLatLng = closestZone['center'] as LatLng;
                           final GoogleMapController? controller =
                               _mapController;
 
-                          // Fly the camera to the zone
                           if (controller != null) {
                             await controller.animateCamera(
                               CameraUpdate.newLatLngZoom(targetLatLng, 16.5),
@@ -741,7 +639,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             _showZoneVehiclesSheet(context, closestZone);
                           }
                         } else {
-                          // 🚨 Trigger your custom pop-up dialog instead of the SnackBar!
                           if (mounted) {
                             _showNoZonesAlert(context);
                           }
@@ -758,7 +655,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // 🚨 UPDATE THE TEXT AND ICON
                           Icon(Icons.near_me, color: Colors.white),
                           SizedBox(width: 10),
                           Text(
@@ -774,7 +670,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                     ),
                   ),
                 ),
-                // D. MAP LOADING OVERLAY
                 if (!_mapReady)
                   Container(
                     color: const Color(0xFFF5F6FA),
@@ -905,7 +800,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          // 🚨 THE UPGRADED ADDRESS ROW WITH NAVIGATION BUTTON
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -918,30 +812,23 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                               Expanded(
                                 child: Text(
                                   zoneAddress,
+                                  maxLines: 2, // 🚨 THE MAGIC FIX: Limits to 2 lines
+                                  overflow: TextOverflow.ellipsis, // 🚨 Adds "..." at the end
                                   style: const TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     color: Colors.grey,
                                     height: 1.3,
                                   ),
                                 ),
                               ),
-
-                              // 👇 THE NEW DIRECTIONS BUTTON 👇
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 12),
                               OutlinedButton.icon(
                                 onPressed: () {
-                                  // 🚨 THE FIX: Extract the coordinates from the 'center' object!
                                   final centerPoint = zone['center'];
-
                                   if (centerPoint != null) {
-                                    // It's a LatLng object, so we can pull latitude and longitude directly from it
                                     _launchDirections(
                                       centerPoint.latitude,
                                       centerPoint.longitude,
-                                    );
-                                  } else {
-                                    debugPrint(
-                                      "Error: Center coordinates are missing!",
                                     );
                                   }
                                 },
@@ -957,6 +844,13 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  side: const BorderSide(color: Color(0xFF1E1452), width: 1),
+                                ),
                               ),
                             ],
                           ),
@@ -970,7 +864,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                   ],
                 ),
               ),
-              // --- 🚨 SMART UX BANNERS START ---
               Builder(
                 builder: (context) {
                   bool isEmptyZone = zoneVehicles.isEmpty;
@@ -984,7 +877,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
                   return Column(
                     children: [
-                      // 1. The "Empty Zone" Warning
                       if (isEmptyZone)
                         Container(
                           margin: const EdgeInsets.symmetric(
@@ -1019,7 +911,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           ),
                         ),
 
-                      // 2. The "High Demand" Warning
                       if (isHighDemand)
                         Container(
                           margin: const EdgeInsets.symmetric(
@@ -1054,7 +945,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           ),
                         ),
 
-                      // 3. The Smart Suggestion (Alternative Zone)
                       if (alternativeZone != null)
                         Container(
                           margin: const EdgeInsets.symmetric(
@@ -1100,7 +990,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                                   ],
                                 ),
                               ),
-                              // Navigate direct to alternative!
                               IconButton(
                                 icon: const Icon(
                                   Icons.directions,
@@ -1122,10 +1011,8 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                   );
                 },
               ),
-              // --- 🚨 SMART UX BANNERS END ---
               Divider(thickness: 1, color: Colors.grey[300], height: 24),
-              // 3. Table Columns
-              if (zoneVehicles.isNotEmpty) // 🚨 ADD THIS IF STATEMENT
+              if (zoneVehicles.isNotEmpty) 
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -1169,8 +1056,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                         ),
                         itemBuilder: (context, index) {
                           final vehicle = zoneVehicles[index];
-                          final String vehicleId =
-                              vehicle['lockNumber'] ?? "Unknown";
+                          final String vehicleId =  vehicle['lockNumber']?.toString() ?? "Unknown";
                           final int battery =
                               int.tryParse(
                                 vehicle['batteryPercentage']?.toString() ??
@@ -1232,12 +1118,10 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   }
 
   void _showFilterSheet(BuildContext context) {
-    // 1. Setup temporary variables for ALL filters so they only apply on button press
     String tempType = _selectedVehicleType;
     double tempBattery = _minBatteryLevel;
     double tempPrice = _maxPrice;
-    double tempRadius =
-        _selectedRadiusKm; // 🚨 ADDED: Temp variable for distance
+    double tempRadius = _selectedRadiusKm;
 
     showModalBottomSheet(
       context: context,
@@ -1248,13 +1132,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
               padding: const EdgeInsets.all(24),
-              // Increased height slightly to give the UI room to breathe
               height: MediaQuery.of(context).size.height * 0.65,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              // 🚨 ADDED: SingleChildScrollView prevents the yellow/black overflow stripes
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1277,7 +1159,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                               tempType = "All";
                               tempBattery = 0;
                               tempPrice = 0.50;
-                              tempRadius = 11.0; // 🚨 Change this to 11.0
+                              tempRadius = 11.0; 
                             });
                           },
                           child: const Text(
@@ -1291,8 +1173,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-
-                    // --- VEHICLE TYPE ---
                     const Text(
                       "Vehicle Type",
                       style: TextStyle(
@@ -1321,8 +1201,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 30),
-
-                    // --- 🚨 UPDATED DISTANCE SLIDER ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1333,7 +1211,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // Show "Anywhere" if the slider is maxed out
                         Text(
                           tempRadius == 11.0
                               ? "Anywhere"
@@ -1349,16 +1226,14 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                     Slider(
                       value: tempRadius,
                       min: 1.0,
-                      max: 11.0, // 🚨 Increased max to 11
-                      divisions: 10, // 🚨 Increased divisions to 10
+                      max: 11.0, 
+                      divisions: 10, 
                       activeColor: Colors.blue,
                       inactiveColor: Colors.blue.shade100,
                       onChanged: (value) =>
                           setModalState(() => tempRadius = value),
                     ),
                     const SizedBox(height: 20),
-
-                    // --- BATTERY SLIDER ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1390,8 +1265,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           setModalState(() => tempBattery = value),
                     ),
                     const SizedBox(height: 20),
-
-                    // --- FARE SLIDER ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1425,25 +1298,22 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
                     const SizedBox(
                       height: 30,
-                    ), // Replaced Spacer() with fixed spacing to fix overflow
-                    // --- APPLY BUTTON ---
+                    ), 
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Save ALL temporary variables back to the main state
                           setState(() {
                             _selectedVehicleType = tempType;
                             _minBatteryLevel = tempBattery;
                             _maxPrice = tempPrice;
-                            _selectedRadiusKm =
-                                tempRadius; // 🚨 Save distance here!
+                            _selectedRadiusKm = tempRadius; 
                           });
                           Navigator.pop(context);
                           _applyFilters(
                             showAlert: true,
-                          ); // Apply everything at once
+                          ); 
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1E1452),
@@ -1471,26 +1341,21 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
   }
 
-  // 🚨 THE NAVIGATION ENGINE
   Future<void> _launchDirections(
     double destinationLat,
     double destinationLng,
   ) async {
-    // Official Universal Google Maps URL for walking directions
     final String googleMapsUrl =
         "https://www.google.com/maps/dir/?api=1&destination=$destinationLat,$destinationLng&travelmode=walking";
-
     final Uri uri = Uri.parse(googleMapsUrl);
 
     if (await canLaunchUrl(uri)) {
-      // Launch external forces the phone to open the native Maps app
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       debugPrint("Could not open maps application.");
     }
   }
 
-  // 🚨 NEW: Smart Engine to find the nearest backup parking zone
   Map<String, dynamic>? _getBestAlternativeZone(
     Map<String, dynamic> currentZone,
   ) {
@@ -1500,12 +1365,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     List<Map<String, dynamic>> validAlternatives = [];
 
     for (var zone in _allLiveZones) {
-      if (zone['id'] == currentZone['id']) continue; // Skip the current one
+      if (zone['id'] == currentZone['id']) continue; 
 
       final center = zone['center'] as LatLng?;
       if (center == null) continue;
 
-      // Must have at least 3 bikes to be considered a "Safe" backup
       int bikeCount = zone['vehicles']?.length ?? 0;
       if (bikeCount < 3) continue;
 
@@ -1516,7 +1380,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
         center.longitude,
       );
 
-      // Must be within walking distance (e.g., 1.5 km)
       if (distanceKm <= 10) {
         var potentialZone = Map<String, dynamic>.from(zone);
         potentialZone['temp_distance'] = distanceKm;
@@ -1526,7 +1389,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
     if (validAlternatives.isEmpty) return null;
 
-    // Sort by closest distance and return the winner
     validAlternatives.sort(
       (a, b) => (a['temp_distance'] as double).compareTo(
         b['temp_distance'] as double,
@@ -1535,8 +1397,6 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     return validAlternatives.first;
   }
 
-
-  // 🚨 DISTANCE CALCULATOR (Haversine formula)
   double _calculateDistance(
     double lat1,
     double lon1,
