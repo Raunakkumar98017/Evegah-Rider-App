@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
+//import 'features/auth/presentation/screens/login_screen.dart';
 //import 'features/dashboard/presentation/screens/main_navigation.dart';
+import  'features/auth/presentation/screens/auth_wrapper.dart';
 
 void main() {
   runApp(const EvegahApp());
@@ -16,7 +17,7 @@ class EvegahApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Evegah Rider',
       theme: AppTheme.lightTheme,
-      home: const LoginScreen(),
+      home: const AuthWrapper(),
       //home: const MainNavigation(),
     );
   }
