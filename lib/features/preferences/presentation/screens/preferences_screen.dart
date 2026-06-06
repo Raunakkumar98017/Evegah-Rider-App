@@ -128,7 +128,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      activeColor: Colors.green,
+      activeThumbColor: Colors.green,
       value: value,
       onChanged: onChanged,
     );

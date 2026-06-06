@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'otp_screen.dart';
+import 'create_profile_screen.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/constants/app_constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,389 +20,321 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool isLoading = false;
 
+  Future<void> sendOtp() async {
+    if (phoneController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter mobile number")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    bool exists = await authService.checkMobileNumber(
+      phoneController.text.trim(),
+    );
+
+    if (exists) {
+      bool otpSent = await authService.sendOtp(phoneController.text.trim());
+
+      if (otpSent && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpScreen(authService: authService),
+          ),
+        );
+      }
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      body: SafeArea(
-        child: Center(
-          child: SizedBox(
-            width: 420,
-
+      body: Stack(
+        children: [
+          Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            color: Colors.white,
+          ),
+          SafeArea(
+            bottom: false,
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
 
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  /// LOGO
+                  Center(child: Image.asset(AppConstants.logoImg, height: 60)),
 
-                  children: [
-                    const SizedBox(height: 40),
+                  const SizedBox(height: 16),
 
-                    // LOGO
-                    Center(
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            AppConstants.logoImg,
-                            height: 120,
-                            fit: BoxFit.contain,
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          RichText(
-                            text: const TextSpan(
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: AppColors.textPrimary,
-                              ),
-
-                              children: [
-                                TextSpan(text: 'Smart Rides. '),
-
-                                TextSpan(
-                                  text: 'Zero Emissions.',
-
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                  const Text(
+                    "Welcome Rider!",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xff2B0B78),
                     ),
+                  ),
 
-                    const SizedBox(height: 60),
+                  const SizedBox(height: 6),
 
-                    // TITLE
-                    const Text(
-                      'Welcome Back 👋',
+                  const Text(
+                    "Sign in to continue your journey",
+                    style: TextStyle(fontSize: 15, color: Colors.grey),
+                  ),
 
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
+                  const SizedBox(height: 24),
 
-                        color: AppColors.textPrimary,
+                  /// SCOOTER IMAGE
+                  Image.asset(
+                    "assets/scooter_bg.png",
+                    width: double.infinity,
+                    fit: BoxFit.fitWidth,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// BOTTOM CARD
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(24, 30, 24, 40),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
                       ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    const Text(
-                      'Login to continue your green journey',
-
-                      style: TextStyle(
-                        fontSize: 15,
-
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // PHONE FIELD
-                    Container(
-                      height: 58,
-
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
-
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-
-                      child: Row(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-
-                            child: Text(
-                              '🇮🇳 +91',
-
-                              style: TextStyle(
-                                fontSize: 16,
-
-                                fontWeight: FontWeight.w600,
-
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-
-                          Container(
-                            width: 1,
-                            height: 30,
-                            color: AppColors.border,
-                          ),
-
-                          const SizedBox(width: 16),
-
-                          Expanded(
-                            child: TextField(
-                              controller: phoneController,
-
-                              keyboardType: TextInputType.phone,
-
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-
-                                hintText: 'Enter mobile number',
-
-                                hintStyle: TextStyle(
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // SEND OTP BUTTON
-                    SizedBox(
-                      width: double.infinity,
-                      height: 58,
-
-                      child: ElevatedButton(
-                        onPressed: isLoading
-                            ? null
-                            : () async {
-                                setState(() {
-                                  isLoading = true;
-                                });
-
-                                bool exists = await authService
-                                    .checkMobileNumber(phoneController.text);
-
-                                if (exists) {
-                                  bool otpSent = await authService.sendOtp(
-                                    phoneController.text,
-                                  );
-
-                                  if (otpSent) {
-                                    Navigator.push(
-                                      context,
-
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            OtpScreen(authService: authService),
-                                      ),
-                                    );
-                                  }
-                                }
-
-                                setState(() {
-                                  isLoading = false;
-                                });
-                              },
-
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-
-                        child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-
-                                children: [
-                                  Text(
-                                    'Send OTP',
-
-                                    style: TextStyle(
-                                      fontSize: 18,
-
-                                      color: Colors.white,
-
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-
-                                  SizedBox(width: 10),
-
-                                  Icon(
-                                    Icons.arrow_forward,
-
-                                    color: Colors.white,
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // SECURITY LINE
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Divider(color: AppColors.divider),
-                        ),
-
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-
-                          child: Row(
-                            children: const [
-                              Icon(
-                                Icons.lock_outline,
-
-                                size: 14,
-
-                                color: AppColors.textMuted,
-                              ),
-
-                              SizedBox(width: 6),
-
-                              Text(
-                                'Your data is 100% secure',
-
-                                style: TextStyle(
-                                  fontSize: 12,
-
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const Expanded(
-                          child: Divider(color: AppColors.divider),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 20,
+                          offset: const Offset(0, -4),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 30),
-
-                    // FEATURES BOX
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 18,
-                        horizontal: 14,
-                      ),
-
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: buildFeature(
-                              Icons.verified_user_outlined,
-
-                              'Secure Login',
-                            ),
-                          ),
-
-                          Expanded(
-                            child: buildFeature(
-                              Icons.bolt_outlined,
-
-                              'Instant OTP',
-                            ),
-                          ),
-
-                          Expanded(
-                            child: buildFeature(Icons.eco_outlined, 'Go Green'),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // FOOTER
-                    Center(
-                      child: RichText(
-                        textAlign: TextAlign.center,
-
-                        text: const TextSpan(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Phone Number",
                           style: TextStyle(
-                            fontSize: 12,
-
-                            color: AppColors.textSecondary,
-
-                            height: 1.5,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xff2B0B78),
                           ),
+                        ),
 
-                          children: [
-                            TextSpan(
-                              text: 'By continuing, you agree to EVegah’s\n',
+                        const SizedBox(height: 10),
+
+                        TextField(
+                          controller: phoneController,
+                          keyboardType: TextInputType.phone,
+                          maxLength: 10,
+                          decoration: InputDecoration(
+                            counterText: "",
+                            hintText: "Enter phone number",
+                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                            filled: true,
+                            fillColor: Colors.white,
+                            prefixIcon: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  child: Row(
+                                    children: [
+                                      const Text("🇮🇳", style: TextStyle(fontSize: 20)),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        "+91",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 24,
+                                  color: Colors.grey.shade300,
+                                ),
+                                const SizedBox(width: 12),
+                              ],
                             ),
-
-                            TextSpan(
-                              text: 'Terms of Use',
-
-                              style: TextStyle(
-                                color: AppColors.primary,
-
-                                fontWeight: FontWeight.bold,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Color(0xff2B0B78),
                               ),
                             ),
+                          ),
+                        ),
 
-                            TextSpan(text: ' and '),
+                        const SizedBox(height: 32),
 
-                            TextSpan(
-                              text: 'Privacy Policy',
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: isLoading ? null : sendOtp,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff2B0B78),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    "Get OTP",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
 
-                              style: TextStyle(
-                                color: AppColors.primary,
+                        const SizedBox(height: 24),
 
-                                fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: Colors.grey.shade300)),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                "or continue with",
+                                style: TextStyle(color: Colors.grey, fontSize: 14),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: Colors.grey.shade300)),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: socialButton(
+                                Image.asset('assets/google_logo.png', height: 18),
+                                "Google",
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: socialButton(
+                                const Icon(Icons.apple, size: 22, color: Colors.black),
+                                "Apple",
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: socialButton(
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    const Icon(Icons.smartphone_outlined, size: 22, color: Color(0xff2B0B78)),
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(width: 2, height: 2, decoration: const BoxDecoration(color: Color(0xff2B0B78), shape: BoxShape.circle)),
+                                          const SizedBox(width: 1.5),
+                                          Container(width: 2, height: 2, decoration: const BoxDecoration(color: Color(0xff2B0B78), shape: BoxShape.circle)),
+                                          const SizedBox(width: 1.5),
+                                          Container(width: 2, height: 2, decoration: const BoxDecoration(color: Color(0xff2B0B78), shape: BoxShape.circle)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                "Phone OTP",
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
 
-                    const SizedBox(height: 30),
-                  ],
-                ),
+                        const SizedBox(height: 32),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Don't have an account? ",
+                              style: TextStyle(color: Colors.grey, fontSize: 15),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const CreateProfileScreen()),
+                                );
+                              },
+                              child: const Text(
+                                "Sign Up",
+                                style: TextStyle(
+                                  color: Color(0xff2B0B78),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget buildFeature(IconData icon, String title) {
-    return Column(
-      children: [
-        Icon(icon, color: AppColors.primary, size: 28),
-
-        const SizedBox(height: 10),
-
-        Text(
-          title,
-          textAlign: TextAlign.center,
-
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
+  Widget socialButton(Widget icon, String text) {
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          icon,
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87)),
+        ],
+      ),
     );
   }
 }

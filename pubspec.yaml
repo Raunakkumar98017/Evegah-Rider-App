@@ -15,8 +15,6 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  
-
   # NETWORK
   http: ^1.6.0
 
@@ -36,10 +34,10 @@ dependencies:
   # URL LAUNCHER
   url_launcher: ^6.3.0
 
-  # LOCATION SERVICES
+  # LOCATION
   geolocator: ^11.0.0
- 
-  #pdf generation
+
+  # PDF
   pdf: ^3.10.8
   printing: ^5.11.1
 
@@ -52,10 +50,11 @@ dependencies:
     git:
       url: https://github.com/bpillon/google_maps_cluster_manager.git
       ref: master
-      
-      
-  #RAZORPAY
+
+  # RAZORPAY
   razorpay_flutter: ^1.4.5
+
+  # DEVICE INFO
   device_info_plus: ^12.4.0
 
 dev_dependencies:
@@ -69,5 +68,3 @@ flutter:
 
   assets:
     - assets/
-    
-    
