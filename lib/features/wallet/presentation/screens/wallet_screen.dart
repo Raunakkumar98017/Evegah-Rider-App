@@ -405,7 +405,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   style: TextStyle(color: tx['isCredit'] ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 16)
                 ),
               );
-            }).toList(),
+            }),
         ],
       ),
     );
