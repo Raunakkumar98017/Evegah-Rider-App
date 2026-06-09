@@ -609,7 +609,7 @@ class _OfferScreenState extends State<OfferScreen> {
                               children: [
                                 Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
                                 const SizedBox(width: 4),
-                                Text('Expired on 25 May 2025', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                Expanded(child: Text('Expired on 25 May 2025', style: TextStyle(color: Colors.grey[500], fontSize: 12))),
                               ],
                             ),
                           ],
@@ -676,7 +676,7 @@ class _OfferScreenState extends State<OfferScreen> {
                                   children: [
                                     Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
                                     const SizedBox(width: 4),
-                                    Text('Used on 18 May 2025 • 09:15 AM', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                                    Expanded(child: Text('Used on 18 May 2025 • 09:15 AM', style: TextStyle(color: Colors.grey[500], fontSize: 11))),
                                   ],
                                 ),
                               ],
@@ -733,7 +733,7 @@ class _OfferScreenState extends State<OfferScreen> {
                                   children: [
                                     Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
                                     const SizedBox(width: 4),
-                                    Text('Used on 10 May 2025 • 07:40 PM', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                                    Expanded(child: Text('Used on 10 May 2025 • 07:40 PM', style: TextStyle(color: Colors.grey[500], fontSize: 11))),
                                   ],
                                 ),
                               ],
