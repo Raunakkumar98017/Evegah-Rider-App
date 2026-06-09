@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-
-//import '../../../dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../dashboard/presentation/screens/main_navigation.dart';
+import '../../../kyc/data/services/digilocker_service.dart';
 
 class KycUploadScreen extends StatefulWidget {
   const KycUploadScreen({super.key});
@@ -12,340 +13,307 @@ class KycUploadScreen extends StatefulWidget {
 }
 
 class _KycUploadScreenState extends State<KycUploadScreen> {
-  bool drivingUploaded = true;
-  bool aadhaarUploaded = true;
-  bool selfieUploaded = true;
+  int _pollCount = 0;
+  bool _isLoading = false;
+  Timer? _pollingTimer;
+  final DigilockerService _digilockerService = DigilockerService();
 
-  String drivingFile = "";
-  String aadhaarFile = "";
-  String selfieFile = "";
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
 
-  Future<void> pickFile(String type) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+  Future<void> _startDigilockerFlow() async {
+    setState(() {
+      _isLoading = true;
+      _pollCount = 0;
+    });
 
-    if (result != null) {
-      String fileName = result.files.single.name;
+    String? authUrl = await _digilockerService.getAuthorizationUrl();
+    if (authUrl != null && authUrl.isNotEmpty) {
+      final Uri url = Uri.parse(authUrl);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+        
+        // Start polling for status every 3 seconds
+        _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+          _pollCount++;
+          
+          if (_pollCount > 40) { // Timeout after 2 minutes (40 * 3s = 120s)
+            timer.cancel();
+            setState(() => _isLoading = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Verification timed out. Please try again.")),
+              );
+            }
+            return;
+          }
 
-      setState(() {
-        if (type == "dl") {
-          drivingUploaded = true;
-          drivingFile = fileName;
-        } else if (type == "aadhaar") {
-          aadhaarUploaded = true;
-          aadhaarFile = fileName;
-        } else {
-          selfieUploaded = true;
-          selfieFile = fileName;
+          String status = await _digilockerService.getKycStatus();
+          
+          if (status == 'verified') {
+            timer.cancel();
+            setState(() => _isLoading = false);
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const VerificationScreen()),
+              );
+            }
+          } else if (status == 'failed') {
+            timer.cancel();
+            setState(() => _isLoading = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("DigiLocker verification failed. Please try again.")),
+              );
+            }
+          }
+          // If pending, let the timer continue
+        });
+      } else {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not launch browser.")));
         }
-      });
+      }
+    } else {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to connect to backend. Please try again.")));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-
+      backgroundColor: const Color(0xFFFAFAFA),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xff2B0B78), size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Image.asset(AppConstants.logoImg, height: 28),
+        centerTitle: true,
+      ),
       body: SafeArea(
-        child: Center(
-          child: SizedBox(
-            width: 450,
-
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  // HEADER
-                  const Text(
-                    "KYC Verification 🪪",
-
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  const Text(
-                    "Verify your identity to unlock EV rides",
-
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // STEPPER
-                  Row(
-                    children: [
-                      buildStep("Profile", true),
-
-                      buildLine(),
-
-                      buildStep("KYC", true),
-
-                      buildLine(),
-
-                      buildStep("Verify", false),
-
-                      buildLine(),
-
-                      buildStep("Dashboard", false),
-                    ],
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // DRIVING LICENSE
-                  buildUploadCard(
-                    title: "Driving License",
-
-                    subtitle: "Upload front side of your DL",
-
-                    icon: Icons.credit_card,
-
-                    uploaded: drivingUploaded,
-
-                    fileName: drivingFile,
-
-                    onTap: () {
-                      pickFile("dl");
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // AADHAAR
-                  buildUploadCard(
-                    title: "Aadhaar Card",
-
-                    subtitle: "Upload government identity",
-
-                    icon: Icons.badge_outlined,
-
-                    uploaded: aadhaarUploaded,
-
-                    fileName: aadhaarFile,
-
-                    onTap: () {
-                      pickFile("aadhaar");
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // SELFIE
-                  buildUploadCard(
-                    title: "Selfie Verification",
-
-                    subtitle: "Take a clear selfie photo",
-
-                    icon: Icons.camera_alt_outlined,
-
-                    uploaded: selfieUploaded,
-
-                    fileName: selfieFile,
-
-                    onTap: () {
-                      pickFile("selfie");
-                    },
-                  ),
-
-                  const SizedBox(height: 35),
-
-                  // SECURITY CARD
-                  Container(
-                    padding: const EdgeInsets.all(20),
-
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green.shade400, Colors.green.shade700],
-                      ),
-
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-
-                    child: const Row(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header Section with Scooter image
+                    Stack(
+                      clipBehavior: Clip.none,
                       children: [
-                        Icon(Icons.lock, color: Colors.white, size: 36),
-
-                        SizedBox(width: 16),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              Text(
-                                "Your Documents Are Secure 🔒",
-
-                                style: TextStyle(
-                                  color: Colors.white,
-
-                                  fontSize: 18,
-
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              SizedBox(height: 6),
-
-                              Text(
-                                "All uploaded files are encrypted and protected.",
-
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            ],
+                        // Adjust scooter position to the right
+                        Positioned(
+                          right: -30,
+                          top: -10,
+                          child: Image.asset(
+                            'assets/scooter_bg.png', 
+                            width: 180,
+                            fit: BoxFit.contain,
                           ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Verify your identity",
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xff2B0B78),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.55,
+                              child: const Text(
+                                "Complete your KYC securely using DigiLocker",
+                                style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.3),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            // 3 Icons Row
+                            Row(
+                              children: [
+                                _buildFeatureIcon(Icons.verified_user, "100% Secure"),
+                                const SizedBox(width: 16),
+                                _buildFeatureIcon(Icons.admin_panel_settings, "Govt. Verified"),
+                                const SizedBox(width: 16),
+                                _buildFeatureIcon(Icons.timer_outlined, "Quick & Easy"),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 40),
 
-                  const SizedBox(height: 40),
-
-                  // SUBMIT BUTTON
-                  SizedBox(
-                    width: double.infinity,
-
-                    height: 60,
-
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (drivingUploaded &&
-                            aadhaarUploaded &&
-                            selfieUploaded) {
-                          Navigator.push(
-                            context,
-
-                            MaterialPageRoute(
-                              builder: (context) => const VerificationScreen(),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Please upload all documents"),
-                            ),
-                          );
-                        }
-                      },
-
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
+                    // Verify using DigiLocker Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                        border: Border.all(color: Colors.grey.shade100),
                       ),
-
-                      child: const Text(
-                        "Submit Verification",
-
-                        style: TextStyle(
-                          fontSize: 18,
-
-                          color: Colors.white,
-
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Verify using DigiLocker",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xff2B0B78)),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Access your official documents securely from DigiLocker to complete your KYC.",
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 14, height: 1.4),
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.asset(
+                                      'assets/digilocker_logo.png',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "DigiLocker",
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff2B0B78)),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        "Govt. of India",
+                                        style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.arrow_forward_ios, color: Colors.grey.shade400, size: 16),
+                              ],
+                            ),
+                          )
+                        ],
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 32),
 
-                  const SizedBox(height: 30),
-                ],
+                    // How it works
+                    const Text(
+                      "How it works",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xff2B0B78)),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildStep("1", "Login to DigiLocker", "You will be redirected to DigiLocker to login securely.", Icons.person, false),
+                    _buildStep("2", "Select documents", "Choose your Aadhaar card or other valid documents to share.", Icons.description, false),
+                    _buildStep("3", "Auto verification", "Your documents will be verified instantly and securely.", Icons.verified_user, true),
+
+                    const SizedBox(height: 32),
+
+                    // Bottom Green Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade100),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.gpp_good, color: Colors.green.shade600, size: 32),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Your data is 100% secure and encrypted.",
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey.shade800),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "We never store your documents.",
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget buildUploadCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool uploaded,
-    required String fileName,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-
-      child: Container(
-        padding: const EdgeInsets.all(20),
-
-        decoration: BoxDecoration(
-          color: Colors.white,
-
-          borderRadius: BorderRadius.circular(24),
-
-          border: Border.all(
-            color: uploaded ? Colors.green : Colors.transparent,
-
-            width: 2,
-          ),
-        ),
-
-        child: Row(
-          children: [
+            
+            // Bottom Button
             Container(
-              padding: const EdgeInsets.all(16),
-
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
               decoration: BoxDecoration(
-                color: uploaded ? Colors.green.shade100 : Colors.grey.shade100,
-
-                borderRadius: BorderRadius.circular(18),
-              ),
-
-              child: Icon(
-                uploaded ? Icons.check : icon,
-
-                color: uploaded ? Colors.green : Colors.black,
-              ),
-            ),
-
-            const SizedBox(width: 18),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  Text(
-                    title,
-
-                    style: const TextStyle(
-                      fontSize: 18,
-
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Text(subtitle, style: const TextStyle(color: Colors.grey)),
-
-                  const SizedBox(height: 6),
-
-                  Text(
-                    fileName,
-
-                    style: const TextStyle(color: Colors.green, fontSize: 12),
-                  ),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, -4)),
                 ],
               ),
-            ),
-
-            Text(
-              uploaded ? "Uploaded" : "Upload",
-
-              style: TextStyle(
-                color: uploaded ? Colors.green : Colors.black,
-
-                fontWeight: FontWeight.bold,
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _startDigilockerFlow,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xff2B0B78),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: _isLoading 
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text(
+                          "Continue with DigiLocker",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
               ),
             ),
           ],
@@ -354,47 +322,85 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
     );
   }
 
-  Widget buildStep(String title, bool active) {
-    return Expanded(
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 16,
-
-            backgroundColor: active ? Colors.green : Colors.grey.shade300,
-
-            child: Icon(
-              active ? Icons.check : Icons.circle,
-
-              size: 14,
-
-              color: Colors.white,
-            ),
+  Widget _buildFeatureIcon(IconData icon, String text) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: const BoxDecoration(
+            color: Color(0xffF2F0F9),
+            shape: BoxShape.circle,
           ),
-
-          const SizedBox(height: 8),
-
-          Text(
-            title,
-
-            style: TextStyle(
-              fontSize: 12,
-
-              color: active ? Colors.black : Colors.grey,
-            ),
-          ),
-        ],
-      ),
+          child: Icon(icon, color: const Color(0xff2B0B78), size: 20),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          text,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
-  Widget buildLine() {
-    return Expanded(child: Container(height: 2, color: Colors.grey.shade300));
+  Widget _buildStep(String number, String title, String subtitle, IconData icon, bool isLast) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Color(0xffF2F0F9),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: const Color(0xff2B0B78), size: 20),
+            ),
+            if (!isLast)
+              Container(
+                height: 40,
+                width: 1,
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(
+                    5,
+                    (index) => Container(
+                      height: 4,
+                      width: 1.5,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10), 
+              Text(
+                "$number. $title",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xff2B0B78)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
 // VERIFICATION SCREEN
-
 class VerificationScreen extends StatelessWidget {
   const VerificationScreen({super.key});
 
@@ -402,59 +408,43 @@ class VerificationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(builder: (context) => const MainNavigation()),
-  (route) => false, // 🚨 This tells Flutter to destroy every previous screen!
-);
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+        (route) => false, // 🚨 This tells Flutter to destroy every previous screen!
+      );
     });
 
     return Scaffold(
       backgroundColor: Colors.white,
-
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-
           children: [
             Container(
               height: 120,
               width: 120,
-
               decoration: BoxDecoration(
                 color: Colors.orange.shade100,
-
                 shape: BoxShape.circle,
               ),
-
               child: Icon(
                 Icons.verified_user,
-
                 size: 70,
-
                 color: Colors.orange.shade700,
               ),
             ),
-
             const SizedBox(height: 40),
-
             const Text(
               "Verification In Progress ⏳",
-
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 14),
-
             const Text(
               "Your documents are being reviewed.\nRedirecting to dashboard...",
-
               textAlign: TextAlign.center,
-
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
-
             const SizedBox(height: 40),
-
             const CircularProgressIndicator(color: Colors.green),
           ],
         ),

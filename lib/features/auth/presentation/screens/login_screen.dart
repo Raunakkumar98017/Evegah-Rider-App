@@ -43,7 +43,10 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => OtpScreen(authService: authService),
+            builder: (_) => OtpScreen(
+              authService: authService,
+              phoneNumber: phoneController.text.trim(),
+            ),
           ),
         );
       }
