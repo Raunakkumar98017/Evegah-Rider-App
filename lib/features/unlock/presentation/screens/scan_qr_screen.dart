@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -122,9 +123,9 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
           barrierDismissible: false,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text("Vehicle Found"),
-              content: const Text("Would you like to unlock this vehicle?"),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: Text("Vehicle Found", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              content: Text("Would you like to unlock this vehicle?", style: GoogleFonts.poppins()),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -133,15 +134,18 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                     });
                     Navigator.pop(context);
                   },
-                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                  child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.grey)),
                 ),
                 ElevatedButton(
                   onPressed: () async {
                     Navigator.pop(context);
                     await _verifyAndUnlock(code, isManual: false);
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3E1E90)),
-                  child: const Text("Unlock", style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4B1DB8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text("Unlock", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
                 ),
               ],
             );
@@ -170,13 +174,15 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text("Enter Vehicle ID", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      Text("Enter Vehicle ID", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 20),
                       TextField(
                         controller: vehicleController,
+                        style: GoogleFonts.poppins(),
                         decoration: InputDecoration(
                           hintText: "EVM1025029 or TEST123",
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+                          hintStyle: GoogleFonts.poppins(color: Colors.grey),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -189,12 +195,12 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                             setModalState(() => isProcessingApi = false);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3E1E90),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            backgroundColor: const Color(0xFF4B1DB8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                           child: isProcessingApi
                               ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text("Unlock Vehicle", style: TextStyle(color: Colors.white, fontSize: 18)),
+                              : Text("Unlock Vehicle", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -212,9 +218,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F8FA), // Design spec background
       appBar: AppBar(
         elevation: 0,
+        scrolledUnderElevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.menu, color: Colors.black),
@@ -222,10 +229,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
         ),
         title: Image.asset(
           'assets/Evegah_login_page_logo.png',
-          height: 45, // Increased size to match the screenshot
+          height: 45,
           fit: BoxFit.contain,
         ),
-        centerTitle: false,
+        centerTitle: true, // FIX #5: Center logo
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black),
@@ -239,7 +246,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                 const CircleAvatar(
                   radius: 18,
                   backgroundColor: Color(0xFFF3E8FF),
-                  child: Icon(Icons.person, color: Color(0xFF3E1E90)),
+                  child: Icon(Icons.person, color: Color(0xFF4B1DB8)),
                 ),
                 Positioned(
                   bottom: 6,
@@ -261,10 +268,11 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16), // Design: screen padding = 16
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 8), // FIX #7: More top padding
               // Header Row
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,14 +281,14 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           "Scan to Unlock",
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                          style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black), // Design: Title = 32 Bold
                         ),
                         const SizedBox(height: 4),
                         Text(
                           "Scan the QR code on the scooter to unlock\nand start your ride.",
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.3),
+                          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600, height: 1.3),
                         ),
                       ],
                     ),
@@ -289,27 +297,37 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF9F6FF),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14), // Design: Tabs = 14
                       border: Border.all(color: const Color(0xFFEFE8FE)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.help_outline, color: Color(0xFF5B30A6), size: 14),
-                        SizedBox(width: 4),
-                        Text("How it works?", style: TextStyle(color: Color(0xFF5B30A6), fontSize: 11, fontWeight: FontWeight.bold)),
+                        const Icon(Icons.help_outline, color: Color(0xFF4B1DB8), size: 14),
+                        const SizedBox(width: 4),
+                        Text("How it works?", style: GoogleFonts.poppins(color: const Color(0xFF4B1DB8), fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24), // Design: section spacing = 24
 
-              // Scanner View
+              // FIX #7: Scanner View - borderRadius ≈ 32
               ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: SizedBox(
+                borderRadius: BorderRadius.circular(32), // FIX: Rounded scanner container radius ≈ 32
+                child: Container(
                   height: 420,
                   width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
                   child: Stack(
                     children: [
                       // Scooter Background for web/emulator or when camera is off
@@ -331,13 +349,11 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                           width: 220,
                           height: 220,
                           decoration: BoxDecoration(
-                            color: Colors.transparent, // the actual transparent hole can be tricky, we simulate with bracket overlay
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Stack(
                             children: [
-                              // The scanner hole effect (simulated by having the rest dark)
-                              // We use ColorFiltered for real cutout if needed, but for simplicity we draw brackets.
                               CustomPaint(
                                 size: const Size(220, 220),
                                 painter: ScannerBracketPainter(),
@@ -353,10 +369,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                                     child: Container(
                                       height: 3,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFCCFF00),
+                                        color: const Color(0xFFD8F238), // Design: Lime Green
                                         boxShadow: [
-                                          BoxShadow(color: const Color(0xFFCCFF00).withOpacity(0.8), blurRadius: 15, spreadRadius: 3),
-                                          BoxShadow(color: const Color(0xFFCCFF00).withOpacity(0.4), blurRadius: 30, spreadRadius: 8),
+                                          BoxShadow(color: const Color(0xFFD8F238).withOpacity(0.8), blurRadius: 15, spreadRadius: 3),
+                                          BoxShadow(color: const Color(0xFFD8F238).withOpacity(0.4), blurRadius: 30, spreadRadius: 8),
                                         ],
                                       ),
                                     ),
@@ -369,14 +385,14 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                       ),
                       
                       // Texts and Flashlight inside Scanner
-                      const Positioned(
+                      Positioned(
                         top: 30,
                         left: 0,
                         right: 0,
                         child: Text(
                           "Align QR code within the frame",
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                          style: GoogleFonts.poppins(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                       ),
                       
@@ -395,14 +411,14 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFF5B30A6),
+                                    color: Color(0xFF4B1DB8), // Design: Primary Purple
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(flashOn ? Icons.flashlight_on : Icons.flashlight_off, color: Colors.white, size: 20),
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              const Text("Flashlight", style: TextStyle(color: Colors.white, fontSize: 12)),
+                              Text("Flashlight", style: GoogleFonts.poppins(color: Colors.white, fontSize: 12)),
                             ],
                           ),
                         ),
@@ -412,21 +428,28 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                         Container(
                           color: Colors.black54,
                           child: const Center(
-                            child: CircularProgressIndicator(color: Color(0xFFCCFF00)),
+                            child: CircularProgressIndicator(color: Color(0xFFD8F238)),
                           ),
                         )
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24), // Design: section spacing = 24
 
               // Safe & Secure Banner
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20), // Design: card padding = 20
                 decoration: BoxDecoration(
                   color: const Color(0xFFF9F6FF),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(24), // Design: Cards = 24
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -436,28 +459,27 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.verified_user_outlined, color: Color(0xFF5B30A6), size: 24),
-                      // Adding a tiny green checkmark over the shield is complex, so we just use the shield icon with a color.
+                      child: const Icon(Icons.verified_user_outlined, color: Color(0xFF4B1DB8), size: 24),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Safe & Secure", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
+                          Text("Safe & Secure", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
                           const SizedBox(height: 4),
-                          Text("Every ride is protected with\nsmart security and IoT tracking.", style: TextStyle(color: Colors.grey.shade600, fontSize: 11, height: 1.3)),
+                          Text("Every ride is protected with\nsmart security and IoT tracking.", style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 12, height: 1.3)),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Color(0xFF5B30A6)),
+                    const Icon(Icons.chevron_right, color: Color(0xFF4B1DB8)),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
               // Other Options
-              const Text("Other options", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text("Other options", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black)), // Design: Section Title = 18 SemiBold
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -468,19 +490,26 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16), // Design: Buttons = 16
                           border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.dialpad, color: Color(0xFF5B30A6), size: 20),
+                            const Icon(Icons.dialpad, color: Color(0xFF4B1DB8), size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text("Enter Scooter ID", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black)),
-                                  Text("Manually enter the scooter ID", style: TextStyle(fontSize: 9, color: Colors.grey.shade500)),
+                                  Text("Enter Scooter ID", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black)),
+                                  Text("Manually enter the scooter ID", style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade500)),
                                 ],
                               ),
                             ),
@@ -500,19 +529,26 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16), // Design: Buttons = 16
                           border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.location_on_outlined, color: Color(0xFF5B30A6), size: 20),
+                            const Icon(Icons.location_on_outlined, color: Color(0xFF4B1DB8), size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text("Find Nearby Scooters", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black)),
-                                  Text("View scooters on the map", style: TextStyle(fontSize: 9, color: Colors.grey.shade500)),
+                                  Text("Find Nearby Scooters", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black)),
+                                  Text("View scooters on the map", style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade500)),
                                 ],
                               ),
                             ),
@@ -529,10 +565,17 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
               // Promo Banner
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20), // Design: card padding = 20
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9F6FF), // Light purple
-                  borderRadius: BorderRadius.circular(16),
+                  color: const Color(0xFFF9F6FF),
+                  borderRadius: BorderRadius.circular(24), // Design: Cards = 24
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -541,16 +584,17 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                       'assets/images/purple_gift_box.png',
                       width: 40,
                       height: 40,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.card_giftcard, color: Color(0xFF5B30A6), size: 40)
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.card_giftcard, color: Color(0xFF4B1DB8), size: 40)
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("50% off on your first ride", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black)),
+                          Text("50% off on your first ride", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
                           const SizedBox(height: 4),
-                          Text("Apply promo code FIRST50 on payment", style: TextStyle(color: Colors.grey.shade600, fontSize: 10)),
+                          Text("Apply promo code FIRST50 on payment", style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -561,12 +605,12 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                         color: const Color(0xFFEFE8FE),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text("View offers", style: TextStyle(color: Color(0xFF5B30A6), fontWeight: FontWeight.bold, fontSize: 10)),
-                          SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_ios, color: Color(0xFF5B30A6), size: 10),
+                          Text("View offers", style: GoogleFonts.poppins(color: const Color(0xFF4B1DB8), fontWeight: FontWeight.bold, fontSize: 10)),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_ios, color: Color(0xFF4B1DB8), size: 10),
                         ],
                       ),
                     ),
@@ -586,7 +630,7 @@ class ScannerBracketPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFCCFF00) // Bright yellow-green
+      ..color = const Color(0xFFD8F238) // Design: Lime Green
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -634,4 +678,4 @@ class ScannerBracketPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+}

@@ -119,7 +119,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                           right: -30,
                           top: -10,
                           child: Image.asset(
-                            'assets/scooter_bg.png', 
+                            'assets/scooter.png', 
                             width: 180,
                             fit: BoxFit.contain,
                           ),

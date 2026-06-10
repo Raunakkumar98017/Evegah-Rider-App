@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../dashboard/presentation/screens/dashboard_screen.dart';
+import '../../../dashboard/presentation/screens/map_discovery_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../wallet/presentation/screens/wallet_screen.dart';
-import '../../../notifications/presentation/screens/notification_screen.dart';
 import '../../../rides/presentation/screen/ride_history_screen.dart';
 import '../../../unlock/presentation/screens/scan_qr_screen.dart';
 
@@ -14,13 +15,13 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  // Start at Wallet tab (index 3) to show the new screen directly
-  int _currentIndex = 3;
+  // Start at Home tab (index 0)
+  int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const DashboardScreen(),
+    const MapDiscoveryScreen(), // Home
     const RideHistoryScreen(), // Bookings
-    const DashboardScreen(), // Scan (Placeholder for now)
+    const DashboardScreen(), // Scan (Placeholder for now, although Scan pushes a route)
     const WalletScreen(), // Wallet
     const ProfileScreen(), // Profile
   ];
@@ -31,7 +32,7 @@ class _MainNavigationState extends State<MainNavigation> {
       backgroundColor: Colors.white,
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(
-        height: 90, // Taller to accommodate the bubble effect
+        height: 90,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -88,14 +89,14 @@ class _MainNavigationState extends State<MainNavigation> {
             child: Icon(
               isSelected ? selectedIcon : unselectedIcon,
               size: isSelected ? 28 : 24,
-              color: isSelected ? const Color(0xFF3E1E90) : Colors.grey.shade600,
+              color: isSelected ? const Color(0xFF4B1DB8) : Colors.grey.shade600, // Design: Primary Purple
             ),
           ),
           if (!isSelected) const SizedBox(height: 4),
           if (!isSelected)
             Text(
               label,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 11,
                 color: Colors.grey.shade600,
                 fontWeight: FontWeight.w600,
@@ -105,9 +106,9 @@ class _MainNavigationState extends State<MainNavigation> {
           if (isSelected)
             Text(
               label,
-              style: const TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Color(0xFF3E1E90),
+                color: const Color(0xFF4B1DB8), // Design: Primary Purple
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -133,7 +134,7 @@ class _MainNavigationState extends State<MainNavigation> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: const BoxDecoration(
-              color: Color(0xFFD6F53D), // Lime Green
+              color: Color(0xFFD8F238), // Design: Lime Green
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -145,9 +146,9 @@ class _MainNavigationState extends State<MainNavigation> {
           const SizedBox(height: 4),
           Text(
             "Scan",
-            style: TextStyle(
+            style: GoogleFonts.poppins(
               fontSize: 11,
-              color: isSelected ? const Color(0xFF3E1E90) : Colors.grey.shade800,
+              color: isSelected ? const Color(0xFF4B1DB8) : Colors.grey.shade800,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -155,4 +156,4 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
     );
   }
-}
+}

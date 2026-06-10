@@ -57,6 +57,9 @@ dependencies:
   # DEVICE INFO
   device_info_plus: ^13.1.0
 
+  # TYPOGRAPHY
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
