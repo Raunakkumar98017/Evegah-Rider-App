@@ -151,7 +151,7 @@ class _BluetoothUnlockScreenState extends State<BluetoothUnlockScreen> {
                                 // 🚨 CRITICAL: Stop scanning BEFORE opening the new screen
                                 await FlutterBluePlus.stopScan(); 
                                 
-                                if (!mounted) return;
+                                if (!context.mounted) return;
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(

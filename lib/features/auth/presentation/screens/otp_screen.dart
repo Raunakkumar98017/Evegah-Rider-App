@@ -69,7 +69,7 @@ class _OtpScreenState extends State<OtpScreen> {
       setState(() {
         errorMessage = "";
       });
-      print("🚨 THE ID CARD I AM HANDING THE WALLET IS: '${widget.authService.accessToken}'");
+      debugPrint("🚨 THE ID CARD I AM HANDING THE WALLET IS: '${widget.authService.accessToken}'");
       // SAVE ACCESS TOKEN
       await sessionService.saveToken(widget.authService.accessToken);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OfferScreen extends StatefulWidget {
   const OfferScreen({super.key});
@@ -16,7 +17,7 @@ class _OfferScreenState extends State<OfferScreen> {
 
   final List<Map<String, dynamic>> offers = [
     {
-      'title': '50% OFF up to ₦500',
+      'title': '50% OFF up to â‚¦500',
       'subtitle': 'Valid on all rides',
       'expiry': 'Valid till 31 May 2025',
       'code': 'EVE50',
@@ -27,7 +28,7 @@ class _OfferScreenState extends State<OfferScreen> {
     },
     {
       'title': '20% OFF on E-Scooters',
-      'subtitle': 'Maximum discount of ₦200',
+      'subtitle': 'Maximum discount of â‚¦200',
       'expiry': 'Valid till 25 May 2025',
       'code': 'SCOOT20',
       'type': 'scooter',
@@ -37,7 +38,7 @@ class _OfferScreenState extends State<OfferScreen> {
     },
     {
       'title': '15% OFF on E-Bikes',
-      'subtitle': 'Maximum discount of ₦150',
+      'subtitle': 'Maximum discount of â‚¦150',
       'expiry': 'Valid till 30 May 2025',
       'code': 'BIKE15',
       'type': 'bike',
@@ -47,7 +48,7 @@ class _OfferScreenState extends State<OfferScreen> {
     },
     {
       'title': 'Add money, get more!',
-      'subtitle': 'Add ₦2,000 or more and get ₦150 bonus',
+      'subtitle': 'Add â‚¦2,000 or more and get â‚¦150 bonus',
       'expiry': 'Valid till 31 May 2025',
       'code': 'WALLET150',
       'type': 'wallet',
@@ -57,7 +58,7 @@ class _OfferScreenState extends State<OfferScreen> {
     },
     {
       'title': '10% OFF on Cars',
-      'subtitle': 'Maximum discount of ₦300',
+      'subtitle': 'Maximum discount of â‚¦300',
       'expiry': 'Valid till 15 Jun 2025',
       'code': 'CAR10',
       'type': 'car',
@@ -77,9 +78,9 @@ class _OfferScreenState extends State<OfferScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F8FA), // Design spec background
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8F8FA),
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -88,10 +89,10 @@ class _OfferScreenState extends State<OfferScreen> {
         ),
         title: Image.asset(
           'assets/Evegah_login_page_logo.png',
-          height: 45, // Increased size to match the screenshot
+          height: 45,
           fit: BoxFit.contain,
         ),
-        centerTitle: false,
+        centerTitle: true, // FIX #5: Center logo
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black),
@@ -106,19 +107,19 @@ class _OfferScreenState extends State<OfferScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Design: screen padding = 16
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
               Text(
                 _selectedTabIndex == 0 ? 'Promotions & Offers' : 'My Offers',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black),
+                style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black), // Design: Title = 32 Bold
               ),
               const SizedBox(height: 4),
               Text(
                 _selectedTabIndex == 0 ? 'Save more on every ride' : "Offers you've collected or unlocked",
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600]), // Design: Body = 14 Regular
               ),
               const SizedBox(height: 20),
               
@@ -128,7 +129,7 @@ class _OfferScreenState extends State<OfferScreen> {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                 ),
                 child: Row(
                   children: [
@@ -140,28 +141,33 @@ class _OfferScreenState extends State<OfferScreen> {
                             color: _selectedTabIndex == 0 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: _selectedTabIndex == 0
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
+                                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
                                 : [],
                           ),
                           child: Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  'Available Offers',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: _selectedTabIndex == 0 ? Colors.deepPurple : Colors.grey[600],
+                                Flexible(
+                                  child: Text(
+                                    'Available Offers',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: _selectedTabIndex == 0 ? const Color(0xFF4B1DB8) : Colors.grey[600],
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: _selectedTabIndex == 0 ? Colors.deepPurple : Colors.grey[300],
+                                    color: _selectedTabIndex == 0 ? const Color(0xFF4B1DB8) : Colors.grey[300],
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Text('6', style: TextStyle(color: _selectedTabIndex == 0 ? Colors.white : Colors.grey[600], fontSize: 10, fontWeight: FontWeight.bold)),
+                                  child: Text('6', style: GoogleFonts.poppins(color: _selectedTabIndex == 0 ? Colors.white : Colors.grey[600], fontSize: 10, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ),
@@ -177,28 +183,33 @@ class _OfferScreenState extends State<OfferScreen> {
                             color: _selectedTabIndex == 1 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: _selectedTabIndex == 1
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
+                                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
                                 : [],
                           ),
                           child: Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  'My Offers',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: _selectedTabIndex == 1 ? Colors.deepPurple : Colors.grey[600],
+                                Flexible(
+                                  child: Text(
+                                    'My Offers',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: _selectedTabIndex == 1 ? const Color(0xFF4B1DB8) : Colors.grey[600],
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: _selectedTabIndex == 1 ? Colors.deepPurple : Colors.grey[300],
+                                    color: _selectedTabIndex == 1 ? const Color(0xFF4B1DB8) : Colors.grey[300],
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Text('2', style: TextStyle(color: _selectedTabIndex == 1 ? Colors.white : Colors.grey[600], fontSize: 10, fontWeight: FontWeight.bold)),
+                                  child: Text('2', style: GoogleFonts.poppins(color: _selectedTabIndex == 1 ? Colors.white : Colors.grey[600], fontSize: 10, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ),
@@ -212,16 +223,16 @@ class _OfferScreenState extends State<OfferScreen> {
               const SizedBox(height: 24),
 
               if (_selectedTabIndex == 0) ...[
-                // Banner
+                // FIX #3: Banner - use actual gift box image instead of generic icon
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20), // Design: card padding = 20
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFF8F0FF), Color(0xFFF3E5F5)], // Very light purple gradient
+                      colors: [Color(0xFFF8F0FF), Color(0xFFF3E5F5)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   ),
                   child: Row(
                     children: [
@@ -230,31 +241,31 @@ class _OfferScreenState extends State<OfferScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Ride more, save more!',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black),
+                              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black), // Design: Section Title = 18 SemiBold
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Unlock exciting offers and\nexclusive benefits.',
-                              style: TextStyle(fontSize: 13, color: Colors.grey[800], height: 1.4),
+                              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[800], height: 1.4),
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple[800],
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                backgroundColor: const Color(0xFF4B1DB8), // Design: Primary Purple
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), // Design: Buttons = 16
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 elevation: 0,
                                 minimumSize: Size.zero,
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text('View All Deals', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward, color: Colors.white, size: 14),
+                                  Text('View All Deals', style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.arrow_forward, color: Colors.white, size: 14),
                                 ],
                               ),
                             ),
@@ -266,7 +277,11 @@ class _OfferScreenState extends State<OfferScreen> {
                         child: Container(
                           height: 100,
                           alignment: Alignment.centerRight,
-                          child: Icon(Icons.card_giftcard, size: 80, color: Colors.deepPurple[300]), // Placeholder for 3d gift
+                          child: Image.asset(
+                            'assets/images/purple_gift_box.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Icon(Icons.card_giftcard, size: 80, color: Colors.deepPurple[300]),
+                          ),
                         ),
                       ),
                     ],
@@ -274,7 +289,7 @@ class _OfferScreenState extends State<OfferScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Categories
+                // FIX #4: Categories - SingleChildScrollView for horizontal scrolling (no clipping)
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -295,20 +310,20 @@ class _OfferScreenState extends State<OfferScreen> {
                           margin: const EdgeInsets.only(right: 12),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isSelected ? const Color(0xFF4B1DB8) : Colors.white,
                             border: Border.all(
-                              color: isSelected ? Colors.deepPurple : Colors.grey[300]!,
+                              color: isSelected ? const Color(0xFF4B1DB8) : Colors.grey[300]!,
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14), // Design: Tabs = 14
                           ),
                           child: Row(
                             children: [
-                              Icon(icon, size: 18, color: isSelected ? Colors.deepPurple : Colors.grey[600]),
+                              Icon(icon, size: 18, color: isSelected ? Colors.white : Colors.grey[600]),
                               const SizedBox(width: 8),
                               Text(
                                 category,
-                                style: TextStyle(
-                                  color: isSelected ? Colors.deepPurple : Colors.grey[800],
+                                style: GoogleFonts.poppins(
+                                  color: isSelected ? Colors.white : Colors.grey[800],
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                   fontSize: 14,
                                 ),
@@ -329,14 +344,14 @@ class _OfferScreenState extends State<OfferScreen> {
                 }).map((offer) {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20), // Design: card padding = 20
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(color: Colors.grey[200]!),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         )
@@ -350,7 +365,7 @@ class _OfferScreenState extends State<OfferScreen> {
                           width: 50,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: (offer['color'] as Color).withOpacity(0.1),
+                            color: (offer['color'] as Color).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(offer['icon'] as IconData, color: offer['color'] as Color, size: 24),
@@ -365,22 +380,22 @@ class _OfferScreenState extends State<OfferScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.deepPurple[50],
+                                    color: const Color(0xFFF3E8FF),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Text('BEST OFFER', style: TextStyle(color: Colors.deepPurple[400], fontSize: 10, fontWeight: FontWeight.bold)),
+                                  child: Text('BEST OFFER', style: GoogleFonts.poppins(color: const Color(0xFF4B1DB8), fontSize: 10, fontWeight: FontWeight.bold)),
                                 ),
                                 const SizedBox(height: 6),
                               ],
-                              Text(offer['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(offer['title'], style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
                               const SizedBox(height: 4),
-                              Text(offer['subtitle'], style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                              Text(offer['subtitle'], style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 12)),
                               const SizedBox(height: 6),
                               Row(
                                 children: [
                                   Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
                                   const SizedBox(width: 4),
-                                  Text(offer['expiry'], style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                  Flexible(child: Text(offer['expiry'], style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 12))),
                                 ],
                               ),
                             ],
@@ -393,21 +408,21 @@ class _OfferScreenState extends State<OfferScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFFDF0), // Very light yellow
+                                color: const Color(0xFFFFFDF0),
                                 border: Border.all(color: Colors.amber[200]!),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 offer['code'],
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
                               ),
                             ),
                             const SizedBox(height: 8),
                             GestureDetector(
                               onTap: () => _copyCode(offer['code']),
-                              child: const Text(
+                              child: Text(
                                 'Copy Code',
-                                style: TextStyle(color: Colors.deepPurple, fontSize: 12, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.poppins(color: const Color(0xFF4B1DB8), fontSize: 12, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
@@ -420,30 +435,30 @@ class _OfferScreenState extends State<OfferScreen> {
                 // How to use offers
                 Container(
                   margin: const EdgeInsets.only(top: 8, bottom: 24),
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20), // Design: card padding = 20
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(color: Colors.grey[200]!),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   ),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple[50],
+                          color: const Color(0xFFF3E8FF),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.verified_user_outlined, color: Colors.deepPurple), // Shield-like icon
+                        child: const Icon(Icons.verified_user_outlined, color: Color(0xFF4B1DB8)),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('How to use offers?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text('How to use offers?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
                             const SizedBox(height: 4),
-                            Text('Copy the code and apply it while\nbooking your ride.', style: TextStyle(color: Colors.grey[600], fontSize: 13, height: 1.4)),
+                            Text('Copy the code and apply it while\nbooking your ride.', style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 12, height: 1.4)),
                           ],
                         ),
                       ),
@@ -454,12 +469,12 @@ class _OfferScreenState extends State<OfferScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('Learn More', style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold, fontSize: 13)),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward, size: 16, color: Colors.deepPurple),
+                            Text('Learn More', style: GoogleFonts.poppins(color: const Color(0xFF4B1DB8), fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF4B1DB8)),
                           ],
                         ),
                       )
@@ -470,18 +485,18 @@ class _OfferScreenState extends State<OfferScreen> {
               ] else ...[
                 // MY OFFERS TAB CONTENT
                 // 1. Active Offers
-                const Text('Active Offers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                Text('Active Offers', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black)),
                 const SizedBox(height: 4),
-                Text('These offers are ready to use', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                Text('These offers are ready to use', style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600])),
                 const SizedBox(height: 12),
                 
-                // Active Offer Card
+                // FIX #6: Active Offer Card - increased padding
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20), // Design: card padding = 20
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFAFFEF), // Very light green
-                    border: Border.all(color: Colors.lightGreen.withOpacity(0.3)),
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFFFAFFEF),
+                    border: Border.all(color: Colors.lightGreen.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,7 +506,7 @@ class _OfferScreenState extends State<OfferScreen> {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.lightGreen.withOpacity(0.2),
+                          color: Colors.lightGreen.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.percent, color: Colors.lightGreen, size: 24),
@@ -505,21 +520,21 @@ class _OfferScreenState extends State<OfferScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.lightGreen.withOpacity(0.2),
+                                color: Colors.lightGreen.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text('ACTIVE', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                              child: Text('ACTIVE', style: GoogleFonts.poppins(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 6),
-                            const Text('50% OFF up to ₦500', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('50% OFF up to â‚¦500', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
                             const SizedBox(height: 4),
-                            Text('Valid on all rides', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                            Text('Valid on all rides', style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 12)),
                             const SizedBox(height: 6),
                             Row(
                               children: [
                                 Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
                                 const SizedBox(width: 4),
-                                Expanded(child: Text('Valid till 31 May 2025 • Min. ride: ₦200', style: TextStyle(color: Colors.grey[500], fontSize: 12))),
+                                Expanded(child: Text('Valid till 31 May 2025 â€¢ Min. ride: â‚¦200', style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 12))),
                               ],
                             ),
                           ],
@@ -537,7 +552,7 @@ class _OfferScreenState extends State<OfferScreen> {
                                   border: Border.all(color: Colors.amber[200]!),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Text('EVE50', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87)),
+                                child: Text('EVE50', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
                               ),
                               const SizedBox(width: 8),
                               const Icon(Icons.chevron_right, color: Colors.black54),
@@ -546,11 +561,11 @@ class _OfferScreenState extends State<OfferScreen> {
                           const SizedBox(height: 12),
                           GestureDetector(
                             onTap: () {},
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Text('Apply Now', style: TextStyle(color: Colors.deepPurple, fontSize: 12, fontWeight: FontWeight.bold)),
-                                SizedBox(width: 4),
-                                Icon(Icons.arrow_forward, size: 14, color: Colors.deepPurple),
+                                Text('Apply Now', style: GoogleFonts.poppins(color: const Color(0xFF4B1DB8), fontSize: 12, fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_forward, size: 14, color: Color(0xFF4B1DB8)),
                               ],
                             ),
                           ),
@@ -562,18 +577,18 @@ class _OfferScreenState extends State<OfferScreen> {
                 const SizedBox(height: 24),
 
                 // 2. Expired Offers
-                const Text('Expired Offers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                Text('Expired Offers', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black)),
                 const SizedBox(height: 4),
-                Text('These offers have expired', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                Text('These offers have expired', style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600])),
                 const SizedBox(height: 12),
                 
                 // Expired Offer Card
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20), // Design: card padding = 20
                   decoration: BoxDecoration(
                     color: const Color(0xFFF9F9F9),
                     border: Border.all(color: Colors.grey[200]!),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,18 +613,18 @@ class _OfferScreenState extends State<OfferScreen> {
                                 color: Colors.grey[300],
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text('EXPIRED', style: TextStyle(color: Colors.grey[700], fontSize: 10, fontWeight: FontWeight.bold)),
+                              child: Text('EXPIRED', style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 6),
-                            const Text('20% OFF on E-Scooters', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('20% OFF on E-Scooters', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
                             const SizedBox(height: 4),
-                            Text('Maximum discount of ₦200', style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                            Text('Maximum discount of â‚¦200', style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 12)),
                             const SizedBox(height: 6),
                             Row(
                               children: [
                                 Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
                                 const SizedBox(width: 4),
-                                Expanded(child: Text('Expired on 25 May 2025', style: TextStyle(color: Colors.grey[500], fontSize: 12))),
+                                Expanded(child: Text('Expired on 25 May 2025', style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 12))),
                               ],
                             ),
                           ],
@@ -624,7 +639,7 @@ class _OfferScreenState extends State<OfferScreen> {
                               border: Border.all(color: Colors.grey[300]!),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text('SCOOT20', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87)),
+                            child: Text('SCOOT20', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87)),
                           ),
                           const SizedBox(width: 8),
                           const Icon(Icons.chevron_right, color: Colors.black54),
@@ -636,19 +651,19 @@ class _OfferScreenState extends State<OfferScreen> {
                 const SizedBox(height: 24),
 
                 // 3. Coupon History
-                const Text('Coupon History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                Text('Coupon History', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black)),
                 const SizedBox(height: 4),
-                Text("All offers you've used", style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                Text("All offers you've used", style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[600])),
                 const SizedBox(height: 12),
 
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20), // Design: card padding = 20
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(color: Colors.grey[200]!),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))
                     ],
                   ),
                   child: Column(
@@ -660,7 +675,7 @@ class _OfferScreenState extends State<OfferScreen> {
                           Container(
                             width: 40,
                             height: 40,
-                            decoration: BoxDecoration(color: Colors.lightGreen.withOpacity(0.1), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: Colors.lightGreen.withValues(alpha: 0.1), shape: BoxShape.circle),
                             child: const Icon(Icons.percent, color: Colors.lightGreen, size: 20),
                           ),
                           const SizedBox(width: 12),
@@ -668,15 +683,15 @@ class _OfferScreenState extends State<OfferScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('15% OFF on E-Bikes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                Text('15% OFF on E-Bikes', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
                                 const SizedBox(height: 4),
-                                Text('Maximum discount of ₦150', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                                Text('Maximum discount of â‚¦150', style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 12)),
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
                                     Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
                                     const SizedBox(width: 4),
-                                    Expanded(child: Text('Used on 18 May 2025 • 09:15 AM', style: TextStyle(color: Colors.grey[500], fontSize: 11))),
+                                    Expanded(child: Text('Used on 18 May 2025 â€¢ 09:15 AM', style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 12))),
                                   ],
                                 ),
                               ],
@@ -694,14 +709,14 @@ class _OfferScreenState extends State<OfferScreen> {
                                       border: Border.all(color: Colors.lightGreen),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Text('BIKE15', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.lightGreen)),
+                                    child: Text('BIKE15', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.lightGreen)),
                                   ),
                                   const SizedBox(width: 8),
                                   const Icon(Icons.chevron_right, color: Colors.black54),
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              const Text('Saved ₦120', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                              Text('Saved â‚¦120', style: GoogleFonts.poppins(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ],
@@ -717,7 +732,7 @@ class _OfferScreenState extends State<OfferScreen> {
                           Container(
                             width: 40,
                             height: 40,
-                            decoration: BoxDecoration(color: Colors.deepPurple.withOpacity(0.1), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: Colors.deepPurple.withValues(alpha: 0.1), shape: BoxShape.circle),
                             child: const Icon(Icons.directions_car, color: Colors.deepPurple, size: 20),
                           ),
                           const SizedBox(width: 12),
@@ -725,15 +740,15 @@ class _OfferScreenState extends State<OfferScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('10% OFF on Cars', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                Text('10% OFF on Cars', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
                                 const SizedBox(height: 4),
-                                Text('Maximum discount of ₦300', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                                Text('Maximum discount of â‚¦300', style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 12)),
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
                                     Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
                                     const SizedBox(width: 4),
-                                    Expanded(child: Text('Used on 10 May 2025 • 07:40 PM', style: TextStyle(color: Colors.grey[500], fontSize: 11))),
+                                    Expanded(child: Text('Used on 10 May 2025 â€¢ 07:40 PM', style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 12))),
                                   ],
                                 ),
                               ],
@@ -751,14 +766,14 @@ class _OfferScreenState extends State<OfferScreen> {
                                       border: Border.all(color: Colors.deepPurple[200]!),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Text('CAR10', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.deepPurple[400])),
+                                    child: Text('CAR10', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.deepPurple[400])),
                                   ),
                                   const SizedBox(width: 8),
                                   const Icon(Icons.chevron_right, color: Colors.black54),
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              const Text('Saved ₦200', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                              Text('Saved â‚¦200', style: GoogleFonts.poppins(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ],
@@ -770,36 +785,42 @@ class _OfferScreenState extends State<OfferScreen> {
 
                 // 4. Promo banner at bottom
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20), // Design: card padding = 20
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFAF5FF), // Very light purple
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFFFAF5FF),
+                    borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.local_offer, size: 40, color: Colors.deepPurple[400]), // Custom icon representation
+                      Image.asset(
+                        'assets/images/purple_gift_box.png',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Icon(Icons.local_offer, size: 40, color: Colors.deepPurple[400]),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Have a promo code?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text('Have a promo code?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
                             const SizedBox(height: 4),
-                            Text('Go to Promotions & Offers to\ndiscover more exciting deals.', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                            Text('Go to Promotions & Offers to\ndiscover more exciting deals.', style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: 12)),
                           ],
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple[50],
-                          borderRadius: BorderRadius.circular(8),
+                          color: const Color(0xFFF3E8FF),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Text('Explore Offers', style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold, fontSize: 12)),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward, color: Colors.deepPurple, size: 14),
+                            Text('Explore Offers', style: GoogleFonts.poppins(color: const Color(0xFF4B1DB8), fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_forward, color: Color(0xFF4B1DB8), size: 14),
                           ],
                         ),
                       ),

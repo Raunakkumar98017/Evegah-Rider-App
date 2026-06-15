@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart'; // 🚨 Added to fetch the saved token
@@ -27,11 +28,11 @@ class SupportService {
       // 2. Attach the token to the URL as a query parameter
       // Your backend expects: /getAllSectionFAQDetail?access_token=eyJhb...
       final url = Uri.parse('$baseUrl/getAllSectionFAQDetail?access_token=$token');
-      print("🌐 Calling API: $url"); 
+      debugPrint("🌐 Calling API: $url"); 
       
       final response = await http.get(url);
 
-      print("📡 Server Status Code: ${response.statusCode}");
+      debugPrint("📡 Server Status Code: ${response.statusCode}");
 
       // 3. Check if the server responded successfully
       if (response.statusCode == 200) {
@@ -47,7 +48,7 @@ class SupportService {
         throw Exception("Server Error: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ API Error: $e. Falling back to local data.");
+      debugPrint("❌ API Error: $e. Falling back to local data.");
       return [
         {
           "question": "How do I unlock an EVegah scooter?",

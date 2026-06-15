@@ -119,7 +119,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                           right: -30,
                           top: -10,
                           child: Image.asset(
-                            'assets/scooter_bg.png', 
+                            'assets/scooter.png', 
                             width: 180,
                             fit: BoxFit.contain,
                           ),
@@ -167,7 +167,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                         ],
                         border: Border.all(color: Colors.grey.shade100),
                       ),
@@ -289,7 +289,7 @@ class _KycUploadScreenState extends State<KycUploadScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, -4)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, -4)),
                 ],
               ),
               child: SizedBox(
@@ -407,6 +407,7 @@ class VerificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 3), () {
+      if (!context.mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainNavigation()),
