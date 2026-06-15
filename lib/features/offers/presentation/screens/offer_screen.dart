@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -141,7 +141,7 @@ class _OfferScreenState extends State<OfferScreen> {
                             color: _selectedTabIndex == 0 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: _selectedTabIndex == 0
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
+                                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
                                 : [],
                           ),
                           child: Center(
@@ -183,7 +183,7 @@ class _OfferScreenState extends State<OfferScreen> {
                             color: _selectedTabIndex == 1 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: _selectedTabIndex == 1
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
+                                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
                                 : [],
                           ),
                           child: Center(
@@ -351,7 +351,7 @@ class _OfferScreenState extends State<OfferScreen> {
                       borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         )
@@ -365,7 +365,7 @@ class _OfferScreenState extends State<OfferScreen> {
                           width: 50,
                           height: 50,
                           decoration: BoxDecoration(
-                            color: (offer['color'] as Color).withOpacity(0.1),
+                            color: (offer['color'] as Color).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(offer['icon'] as IconData, color: offer['color'] as Color, size: 24),
@@ -495,7 +495,7 @@ class _OfferScreenState extends State<OfferScreen> {
                   padding: const EdgeInsets.all(20), // Design: card padding = 20
                   decoration: BoxDecoration(
                     color: const Color(0xFFFAFFEF),
-                    border: Border.all(color: Colors.lightGreen.withOpacity(0.3)),
+                    border: Border.all(color: Colors.lightGreen.withValues(alpha: 0.3)),
                     borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   ),
                   child: Row(
@@ -506,7 +506,7 @@ class _OfferScreenState extends State<OfferScreen> {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.lightGreen.withOpacity(0.2),
+                          color: Colors.lightGreen.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.percent, color: Colors.lightGreen, size: 24),
@@ -520,7 +520,7 @@ class _OfferScreenState extends State<OfferScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.lightGreen.withOpacity(0.2),
+                                color: Colors.lightGreen.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text('ACTIVE', style: GoogleFonts.poppins(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -663,7 +663,7 @@ class _OfferScreenState extends State<OfferScreen> {
                     border: Border.all(color: Colors.grey[200]!),
                     borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))
                     ],
                   ),
                   child: Column(
@@ -675,7 +675,7 @@ class _OfferScreenState extends State<OfferScreen> {
                           Container(
                             width: 40,
                             height: 40,
-                            decoration: BoxDecoration(color: Colors.lightGreen.withOpacity(0.1), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: Colors.lightGreen.withValues(alpha: 0.1), shape: BoxShape.circle),
                             child: const Icon(Icons.percent, color: Colors.lightGreen, size: 20),
                           ),
                           const SizedBox(width: 12),
@@ -732,7 +732,7 @@ class _OfferScreenState extends State<OfferScreen> {
                           Container(
                             width: 40,
                             height: 40,
-                            decoration: BoxDecoration(color: Colors.deepPurple.withOpacity(0.1), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: Colors.deepPurple.withValues(alpha: 0.1), shape: BoxShape.circle),
                             child: const Icon(Icons.directions_car, color: Colors.deepPurple, size: 20),
                           ),
                           const SizedBox(width: 12),

@@ -32,7 +32,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
@@ -69,7 +69,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: _prefService.availableLanguages.map((lang) {
@@ -90,12 +90,11 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                             : const SizedBox.shrink(),
                         onTap: () async {
                           await _prefService.changeLanguage(lang);
+                          if (!context.mounted) return;
                           setState(() {});
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Language updated to $lang"), backgroundColor: Colors.black),
-                            );
-                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Language updated to $lang"), backgroundColor: Colors.black),
+                          );
                         },
                       ),
                       if (lang != _prefService.availableLanguages.last)

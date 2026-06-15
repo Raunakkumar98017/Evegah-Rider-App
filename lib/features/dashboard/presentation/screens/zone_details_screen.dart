@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,7 +20,7 @@ class ZoneDetailsScreen extends StatefulWidget {
 }
 
 class _ZoneDetailsScreenState extends State<ZoneDetailsScreen> {
-  GoogleMapController? _mapController;
+
   int _selectedVehicleIndex = 0;
 
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
@@ -69,9 +68,7 @@ class _ZoneDetailsScreenState extends State<ZoneDetailsScreen> {
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
-            onMapCreated: (controller) {
-              _mapController = controller;
-            },
+
             markers: center != null ? {
               Marker(
                 markerId: MarkerId(widget.zone['id']?.toString() ?? 'zone_1'),
@@ -197,7 +194,7 @@ class _ZoneDetailsScreenState extends State<ZoneDetailsScreen> {
                               width: 140,
                               margin: const EdgeInsets.only(right: 12),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF4B1DB8).withOpacity(0.04) : Colors.white,
+                                color: isSelected ? const Color(0xFF4B1DB8).withValues(alpha: 0.04) : Colors.white,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isSelected ? const Color(0xFF4B1DB8) : Colors.grey.shade200,

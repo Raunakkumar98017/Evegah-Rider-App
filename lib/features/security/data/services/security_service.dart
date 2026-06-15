@@ -23,7 +23,7 @@ class SecurityService {
         deviceName = "${androidInfo.brand[0].toUpperCase()}${androidInfo.brand.substring(1)} ${androidInfo.model}";
       } else if (Platform.isIOS) {
         IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-        deviceName = iosInfo.name ?? "Apple iPhone/iPad";
+        deviceName = iosInfo.name;
       }
     } catch (e) {
       deviceName = Platform.isAndroid ? "Android Device" : "iOS Device";

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,7 +29,7 @@ class UnlockService {
       }
       return null;
     } catch (e) {
-      print("❌ Error fetching vehicle location: $e");
+      debugPrint("❌ Error fetching vehicle location: $e");
       return null;
     }
   }
@@ -57,12 +58,12 @@ class UnlockService {
         }
         
         // If the backend doesn't send an ID yet, we return a fallback so the app doesn't crash during testing.
-        print("⚠️ Warning: Backend didn't return a rideBookingId. Using fallback 999.");
+        debugPrint("⚠️ Warning: Backend didn't return a rideBookingId. Using fallback 999.");
         return 999; 
       }
       return null; // Null means the unlock failed
     } catch (e) {
-      print("❌ Unlock API Error: $e");
+      debugPrint("❌ Unlock API Error: $e");
       return null;
     }
   }

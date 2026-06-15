@@ -148,7 +148,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
 
                               blurRadius: 12,
                             ),
@@ -240,7 +240,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
 
                                 blurRadius: 20,
                               ),
@@ -391,7 +391,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                             boxShadow: [
                               if (isSelected)
                                 BoxShadow(
-                                  color: Colors.green.withOpacity(0.2),
+                                  color: Colors.green.withValues(alpha: 0.2),
 
                                   blurRadius: 12,
                                 ),

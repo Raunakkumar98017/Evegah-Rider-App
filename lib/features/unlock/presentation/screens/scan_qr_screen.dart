@@ -322,7 +322,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                     borderRadius: BorderRadius.circular(32),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -341,7 +341,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                       MobileScanner(controller: controller, onDetect: onDetectBarcode),
                       
                       // Dark Overlay
-                      Container(color: Colors.black.withOpacity(0.5)),
+                      Container(color: Colors.black.withValues(alpha: 0.5)),
                       
                       // Cutout Box
                       Center(
@@ -371,8 +371,8 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFD8F238), // Design: Lime Green
                                         boxShadow: [
-                                          BoxShadow(color: const Color(0xFFD8F238).withOpacity(0.8), blurRadius: 15, spreadRadius: 3),
-                                          BoxShadow(color: const Color(0xFFD8F238).withOpacity(0.4), blurRadius: 30, spreadRadius: 8),
+                                          BoxShadow(color: const Color(0xFFD8F238).withValues(alpha: 0.8), blurRadius: 15, spreadRadius: 3),
+                                          BoxShadow(color: const Color(0xFFD8F238).withValues(alpha: 0.4), blurRadius: 30, spreadRadius: 8),
                                         ],
                                       ),
                                     ),
@@ -445,7 +445,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                   borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -494,7 +494,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                           border: Border.all(color: Colors.grey.shade200),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: Colors.black.withValues(alpha: 0.02),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -533,7 +533,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                           border: Border.all(color: Colors.grey.shade200),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: Colors.black.withValues(alpha: 0.02),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -571,7 +571,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> with SingleTickerProviderSt
                   borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),

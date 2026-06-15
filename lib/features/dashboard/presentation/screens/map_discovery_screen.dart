@@ -9,8 +9,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart'
 import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
-import '../screens/vehicle_details_screen.dart';
-
 // ðŸš¨ ADDED: The new Dashboard Chef!
 import '../../data/services/dashboard_service.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -96,11 +94,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
       // 3. If all checks pass, grab the coordinates with timeout!
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       ).timeout(
         const Duration(seconds: 15),
         onTimeout: () => Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.low,
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
         ),
       );
     } catch (e) {
@@ -317,7 +315,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
     final data = await img.toByteData(format: ui.ImageByteFormat.png);
 
-    return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+    return BitmapDescriptor.bytes(data!.buffer.asUint8List());
   }
 
   Future<void> _silentRefreshData() async {
@@ -402,7 +400,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       format: ui.ImageByteFormat.png,
     );
 
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
+    return BitmapDescriptor.bytes(bytes!.buffer.asUint8List());
   }
 
   // ðŸš¨ UPDATED MAGIC SIEVE TO USE CLUSTER MANAGER
@@ -540,7 +538,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -614,7 +612,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
+                                color: Colors.black.withValues(alpha: 0.06),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
@@ -652,7 +650,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -706,7 +704,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -734,7 +732,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -832,6 +830,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
   }
 
+  // ignore: unused_element
   void _showZoneVehiclesSheet(BuildContext context, Map<String, dynamic> zone) {
     String zoneName = zone['zoneName']?.toString() ?? 'Lekki Phase 1';
     
@@ -968,7 +967,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                               width: 140,
                               margin: const EdgeInsets.only(right: 12),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF4B1DB8).withOpacity(0.04) : Colors.white,
+                                color: isSelected ? const Color(0xFF4B1DB8).withValues(alpha: 0.04) : Colors.white,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isSelected ? const Color(0xFF4B1DB8) : Colors.grey.shade200,
@@ -1301,6 +1300,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
   }
 
+  // ignore: unused_element
   Future<void> _launchDirections(
     double destinationLat,
     double destinationLng,
@@ -1316,6 +1316,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     }
   }
 
+  // ignore: unused_element
   Map<String, dynamic>? _getBestAlternativeZone(
     Map<String, dynamic> currentZone,
   ) {

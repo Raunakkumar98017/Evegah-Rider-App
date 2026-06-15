@@ -1,0 +1,15 @@
+﻿Analyzing Evegah-Rider-App...                                   
+
+   info - The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart'. Try removing the import directive - lib\features\auth\presentation\screens\otp_screen.dart:1:8 - unnecessary_import
+   info - Unnecessary braces in a string interpolation. Try removing the braces - lib\features\battery\presentation\screens\battery_dashboard_screen.dart:427:56 - unnecessary_brace_in_string_interps
+warning - Unused import: '../../../../core/constants/app_constants.dart'. Try removing the import directive - lib\features\kyc\data\services\digilocker_service.dart:3:8 - unused_import
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext - lib\features\preferences\presentation\screens\preferences_screen.dart:95:48 - use_build_context_synchronously
+   info - The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart'. Try removing the import directive - lib\features\rides\presentation\screen\ride_started_screen.dart:1:8 - unnecessary_import
+   info - Don't invoke 'print' in production code. Try using a logging framework - lib\features\wallet\presentation\screens\wallet_screen.dart:151:7 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\wallet\presentation\screens\wallet_screen.dart:300:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\wallet\presentation\screens\wallet_screen.dart:316:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\wallet\presentation\screens\wallet_screen.dart:367:65 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\wallet\presentation\screens\wallet_screen.dart:378:61 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\wallet\presentation\screens\wallet_screen.dart:421:71 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\wallet\presentation\screens\wallet_screen.dart:664:49 - deprecated_member_use
+

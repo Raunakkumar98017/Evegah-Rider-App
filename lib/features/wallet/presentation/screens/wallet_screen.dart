@@ -22,7 +22,6 @@ class _WalletScreenState extends State<WalletScreen> {
   bool isProcessingPayment = false;
   
   bool isLoadingData = true;
-  double _walletBalance = 0.0;
   List<Map<String, dynamic>> _recentTransactions = [];
 
   @override
@@ -39,12 +38,11 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _loadWalletData() async {
     setState(() => isLoadingData = true);
     
-    double balance = await _walletService.fetchWalletBalance();
-    List<Map<String, dynamic>> txs = await _walletService.fetchRecentTransactions();
+    await _walletService.fetchWalletBalance();
+    await _walletService.fetchRecentTransactions();
     
     if (mounted) {
       setState(() {
-        _walletBalance = balance > 0 ? balance : 2450.00;
         
         _recentTransactions = [
           {
@@ -150,7 +148,7 @@ class _WalletScreenState extends State<WalletScreen> {
     try {
       _razorpay.open(options);
     } catch (e) {
-      print("Razorpay Error: $e");
+      debugPrint("Razorpay Error: $e");
       setState(() => isProcessingPayment = false);
     }
   }
@@ -299,7 +297,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     color: const Color(0xFF331879),
                     borderRadius: BorderRadius.circular(24), // Design: Cards = 24
                     boxShadow: [
-                      BoxShadow(color: const Color(0xFF331879).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))
+                      BoxShadow(color: const Color(0xFF331879).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))
                     ],
                   ),
                   child: ClipRRect(
@@ -315,7 +313,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             height: 180,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.04),
+                              color: Colors.white.withValues(alpha: 0.04),
                             ),
                           ),
                         ),
@@ -366,7 +364,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.1),
+                                            color: Colors.white.withValues(alpha: 0.1),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(Icons.visibility_outlined, color: Colors.white70, size: 16),
@@ -377,7 +375,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.1),
+                                        color: Colors.white.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
@@ -420,7 +418,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                       icon: const Icon(Icons.arrow_outward, color: Colors.white, size: 18),
                                       label: Text("Withdraw", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14)),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white.withOpacity(0.15),
+                                        backgroundColor: Colors.white.withValues(alpha: 0.15),
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), // Design: Buttons = 16
@@ -663,7 +661,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16), // Design: Buttons = 16
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
                 ],
               ),
               child: Icon(icon, color: iconColor, size: 28),
