@@ -118,9 +118,9 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
-                  BoxShadow(color: Colors.green.withOpacity(0.15), blurRadius: 20, offset: const Offset(0, 8)),
+                  BoxShadow(color: Colors.green.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 8)),
                 ],
-                border: Border.all(color: Colors.green.withOpacity(0.3), width: 2), // Gives it a nice frame
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3), width: 2), // Gives it a nice frame
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(26),
@@ -201,7 +201,7 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(color: Colors.grey.shade200, width: 1.5), // Crisp border
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 5)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 15, offset: const Offset(0, 5)),
                 ],
               ),
               child: Column(
@@ -248,7 +248,7 @@ class _RideDetailScreenState extends State<RideDetailScreen> {
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   elevation: 5,
-                  shadowColor: const Color(0xFF1E1452).withOpacity(0.4),
+                  shadowColor: const Color(0xFF1E1452).withValues(alpha: 0.4),
                 ),
                 icon: const Icon(Icons.receipt_long_rounded, size: 24),
                 label: const Text("Download Invoice", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5)),

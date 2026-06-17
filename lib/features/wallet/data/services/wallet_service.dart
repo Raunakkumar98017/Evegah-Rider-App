@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,7 +42,7 @@ class WalletService {
       }
       return 0.0;
     } catch (e) {
-      print("❌ Error fetching wallet balance: $e");
+      debugPrint("❌ Error fetching wallet balance: $e");
       return 0.0;
     }
   }
@@ -88,7 +89,7 @@ class WalletService {
       }
       return [];
     } catch (e) {
-      print("❌ Error fetching transactions: $e");
+      debugPrint("❌ Error fetching transactions: $e");
       return [];
     }
   }
@@ -100,7 +101,7 @@ class WalletService {
       final String? token = prefs.getString('access_token');
 
       final url = Uri.parse('$baseUrl/v1/order?access_token=$token');
-      print("🌐 Calling API: $url");
+      debugPrint("🌐 Calling API: $url");
 
       final response = await http.post(
         url,
@@ -110,8 +111,8 @@ class WalletService {
         }),
       );
 
-      print("📡 Server Status Code: ${response.statusCode}");
-      print("📦 Server Response: ${response.body}");
+      debugPrint("📡 Server Status Code: ${response.statusCode}");
+      debugPrint("📦 Server Response: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decodedData = jsonDecode(response.body);
@@ -120,7 +121,7 @@ class WalletService {
         String keyId = decodedData['key_id'] ?? decodedData['data']?['key_id'] ?? "";
 
         if (orderId.isEmpty || keyId.isEmpty) {
-           print("❌ Missing orderId or keyId in server response.");
+           debugPrint("❌ Missing orderId or keyId in server response.");
            return null;
         }
 
@@ -129,11 +130,11 @@ class WalletService {
           "keyId": keyId
         };
       } else {
-        print("❌ Failed to create order: ${response.body}");
+        debugPrint("❌ Failed to create order: ${response.body}");
         return null;
       }
     } catch (e) {
-      print("❌ Wallet API Error: $e");
+      debugPrint("❌ Wallet API Error: $e");
       return null;
     }
   }

@@ -43,7 +43,10 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => OtpScreen(authService: authService),
+            builder: (_) => OtpScreen(
+              authService: authService,
+              phoneNumber: phoneController.text.trim(),
+            ),
           ),
         );
       }
@@ -115,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 20,
                           offset: const Offset(0, -4),
                         ),

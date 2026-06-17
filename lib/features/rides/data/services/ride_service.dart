@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,7 +41,7 @@ class RideService {
       }
       throw Exception("Server Error");
     } catch (e) {
-      print("❌ History API Error: $e");
+      debugPrint("❌ History API Error: $e");
       // Keep your dummy data fallback for testing!
       return [{"rideId": "RIDE-9021", "date": "May 26, 2026", "vehicleId": "EVM1025029", "distance": "2.4 km", "time": "14 mins", "cost": "₹ 45"}];
     }
@@ -64,7 +65,7 @@ class RideService {
       }
       throw Exception("Status: ${response.statusCode}");
     } catch (e) {
-      print("⚠️ Polling Error (Ignored to prevent crash): $e");
+      debugPrint("⚠️ Polling Error (Ignored to prevent crash): $e");
       return {"batteryPercentage": 0, "speed": 0}; 
     }
   }
@@ -93,7 +94,7 @@ class RideService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print("❌ End Ride API Error: $e");
+      debugPrint("❌ End Ride API Error: $e");
       return false;
     }
   }
@@ -128,7 +129,7 @@ class RideService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print("❌ Feedback API Error: $e");
+      debugPrint("❌ Feedback API Error: $e");
       return false;
     }
   }

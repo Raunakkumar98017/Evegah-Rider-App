@@ -161,7 +161,7 @@ class _RideStartedScreenState extends State<RideStartedScreen> {
     try {
       finalPos = await Geolocator.getLastKnownPosition();
     } catch (e) {
-      print("Couldn't get final GPS");
+      debugPrint("Couldn't get final GPS");
     }
 
     if (widget.vehicleId == "TEST123") {
@@ -223,7 +223,7 @@ class _RideStartedScreenState extends State<RideStartedScreen> {
     // 🚨 UPGRADE: PopScope applied here to lock the screen!
     return PopScope(
       canPop: false, 
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -268,7 +268,7 @@ class _RideStartedScreenState extends State<RideStartedScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                    colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
                   ),
                 ),
                 child: Row(

@@ -1,0 +1,4 @@
+﻿Analyzing Evegah-Rider-App...                                   
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss. Try replacing the use of the deprecated member with the replacement - lib\features\rides\presentation\screen\ride_started_screen.dart:271:43 - deprecated_member_use
+

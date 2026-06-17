@@ -9,11 +9,11 @@ import 'package:google_maps_flutter/google_maps_flutter.dart'
 import 'package:google_maps_cluster_manager/google_maps_cluster_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
-import '../screens/vehicle_details_screen.dart';
-
-// 🚨 ADDED: The new Dashboard Chef!
-import '../../data/services/dashboard_service.dart'; 
-
+// ðŸš¨ ADDED: The new Dashboard Chef!
+import '../../data/services/dashboard_service.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../unlock/presentation/screens/scan_qr_screen.dart';
+import 'zone_details_screen.dart';
 class MapDiscoveryScreen extends StatefulWidget {
   const MapDiscoveryScreen({super.key});
 
@@ -22,10 +22,10 @@ class MapDiscoveryScreen extends StatefulWidget {
 }
 
 class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
-  // 🚨 HIRE THE CHEF
+  // ðŸš¨ HIRE THE CHEF
   final DashboardService _dashboardService = DashboardService();
 
-  // 🚨 DISTANCE FILTER VARIABLES
+  // ðŸš¨ DISTANCE FILTER VARIABLES
   double _selectedRadiusKm = 11.0; // Default to max 10km
   Position?
   _currentUserPosition; // Stores their GPS location so we don't have to keep pinging it
@@ -38,7 +38,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   bool _isLocatingUser = true;
   bool _mapReady = false;
 
-  // 🚨 THE GPS ENGINE
+  // ðŸš¨ THE GPS ENGINE
   Future<Position?> _getUserLocation() async {
     try {
       bool serviceEnabled;
@@ -94,11 +94,11 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
       // 3. If all checks pass, grab the coordinates with timeout!
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       ).timeout(
         const Duration(seconds: 15),
         onTimeout: () => Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.low,
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
         ),
       );
     } catch (e) {
@@ -107,12 +107,12 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     }
   }
 
-  // 🚨 AUTOMATIC STARTUP RADAR
+  // ðŸš¨ AUTOMATIC STARTUP RADAR
   Future<void> _locateUserAndCheckZones() async {
     // 1. Get User Location quietly
     Position? userPos = await _getUserLocation();
 
-    // 🚨 NEW: Save it so the filter slider can use it!
+    // ðŸš¨ NEW: Save it so the filter slider can use it!
     if (userPos != null) {
       _currentUserPosition = userPos;
     }
@@ -161,13 +161,13 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     }
   }
 
-  // 🚨 FILTER STATE VARIABLES
+  // ðŸš¨ FILTER STATE VARIABLES
   String _selectedVehicleType = "All";
   double _minBatteryLevel = 0;
   double _maxPrice = 0.50;
   List<Map<String, dynamic>> _allLiveZones = [];
 
-  // 🚨 NEW CLUSTER VARIABLES
+  // ðŸš¨ NEW CLUSTER VARIABLES
   late ClusterManager<ZonePlace> _clusterManager;
   List<ZonePlace> _clusterItems = [];
 
@@ -199,7 +199,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     super.dispose();
   }
 
-  // 🚨 CLUSTER MANAGER SETUP
+  // ðŸš¨ CLUSTER MANAGER SETUP
   ClusterManager<ZonePlace> _initClusterManager() {
     return ClusterManager<ZonePlace>(
       _clusterItems,
@@ -215,7 +215,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     });
   }
 
-  // 🚨 THE SMART MARKER BUILDER
+  // ðŸš¨ THE SMART MARKER BUILDER
   Future<Marker> _markerBuilder(Cluster<ZonePlace> cluster) async {
     return Marker(
       markerId: MarkerId(cluster.getId()),
@@ -252,7 +252,15 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
             controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
           }
         } else {
-          _showZoneVehiclesSheet(context, cluster.items.first.rawData);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ZoneDetailsScreen(
+                zone: cluster.items.first.rawData,
+                currentUserPosition: _currentUserPosition,
+              ),
+            ),
+          );
         }
       },
       icon: cluster.isMultiple
@@ -264,7 +272,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
   }
 
-  // 🚨 DRAW THE NUMBERED CIRCLE FOR CLUSTERS
+  // ðŸš¨ DRAW THE NUMBERED CIRCLE FOR CLUSTERS
   Future<BitmapDescriptor> _getClusterIcon(int clusterSize) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
@@ -307,12 +315,12 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
     final data = await img.toByteData(format: ui.ImageByteFormat.png);
 
-    return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+    return BitmapDescriptor.bytes(data!.buffer.asUint8List());
   }
 
   Future<void> _silentRefreshData() async {
     try {
-      // 🚨 ASK THE CHEF!
+      // ðŸš¨ ASK THE CHEF!
       final liveZones = await _dashboardService.fetchLiveZonesFromApi();
       if (liveZones.isNotEmpty && mounted) {
         _allLiveZones = liveZones;
@@ -344,7 +352,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
 
     setState(() => _markers = {});
 
-    // 🚨 ASK THE CHEF!
+    // ðŸš¨ ASK THE CHEF!
     final liveZones = await _dashboardService.fetchLiveZonesFromApi();
 
     if (liveZones.isEmpty) {
@@ -392,10 +400,10 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
       format: ui.ImageByteFormat.png,
     );
 
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
+    return BitmapDescriptor.bytes(bytes!.buffer.asUint8List());
   }
 
-  // 🚨 UPDATED MAGIC SIEVE TO USE CLUSTER MANAGER
+  // ðŸš¨ UPDATED MAGIC SIEVE TO USE CLUSTER MANAGER
   void _applyFilters({bool showAlert = false}) {
     List<Map<String, dynamic>> filteredZones = [];
     bool isFilterActive = _minBatteryLevel > 0;
@@ -478,23 +486,24 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: const Color(0xFFF8F8FA),
       body: _isLocatingUser
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFF1E1452)),
-                  SizedBox(height: 16),
+                  const CircularProgressIndicator(color: Color(0xFF4B1DB8)),
+                  const SizedBox(height: 16),
                   Text(
                     "Locating nearest bikes...",
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
                   ),
                 ],
               ),
             )
           : Stack(
               children: [
+                // 1. Full Screen Google Map
                 GoogleMap(
                   initialCameraPosition: _initialCameraPosition,
                   markers: _markers,
@@ -517,171 +526,238 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                   mapToolbarEnabled: false,
                 ),
 
+                // 2. Map UI Overlays
                 SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 50,
-                          width: 50,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.menu, color: Colors.black87),
-                            onPressed: () {},
-                          ),
-                        ),
-
-                        Container(
-                          height: 50,
-                          width: 50,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.tune,
-                              color:
-                                  _minBatteryLevel > 0 ||
-                                          _selectedVehicleType != "All"
-                                      ? Colors.purple
-                                      : Colors.black87,
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      // Top App Bar Area
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                            onPressed: () {
-                              _showFilterSheet(context);
-                            },
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // Hamburger Menu
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade200),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.menu, color: Colors.black87),
+                            ),
+                            const SizedBox(width: 16),
+                            // EVegah Logo
+                            Text(
+                              "evegah",
+                              style: GoogleFonts.poppins(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF4B1DB8),
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            const Spacer(),
+                            // Notification Icon
+                            Stack(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.notifications_none, color: Colors.black87, size: 28),
+                                  onPressed: () {},
+                                ),
+                                Positioned(
+                                  right: 12,
+                                  top: 12,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFD8F238), // Lime green dot
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 8),
+                            // Profile Icon
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.person_outline, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Search Bar
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                        child: Container(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: 16),
+                              const Icon(Icons.search, color: Color(0xFF4B1DB8)),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  "Where do you want to go?",
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.tune, color: Color(0xFF4B1DB8)),
+                                onPressed: () => _showFilterSheet(context),
+                              ),
+                              const SizedBox(width: 4),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+
+                      // Parking Chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF4B1DB8),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Text("P", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Parking areas",
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF4B1DB8),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
+                // Floating Action Buttons (Refresh & Location)
                 Positioned(
-                  bottom: 24,
-                  left: 20,
-                  right: 20,
-                  child: SizedBox(
-                    height: 60,
-                    width: double.infinity,
-
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Locating nearest available bikes...',
-                            ),
-                            duration: Duration(seconds: 2),
+                  right: 16,
+                  bottom: 30, // Above bottom nav (which is added by MainNavigation)
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Refresh Button
+                      GestureDetector(
+                        onTap: () {
+                          _silentRefreshData();
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Refreshing map...'), duration: Duration(seconds: 1)));
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        );
-
-                        Position? userPos = await _getUserLocation();
-                        if (userPos == null) return; 
-
-                        Map<String, dynamic>? closestZone;
-                        double minDistance = double.infinity;
-
-                        for (var zone in _allLiveZones) {
-                          if (zone['vehicles']?.isEmpty ?? true) continue;
-
-                          final center = zone['center'] as LatLng?;
-                          if (center == null) continue;
-
-                          double dist = _calculateDistance(
-                            userPos.latitude,
-                            userPos.longitude,
-                            center.latitude,
-                            center.longitude,
-                          );
-
-                          if (dist < minDistance) {
-                            minDistance = dist;
-                            closestZone = zone;
-                          }
-                        }
-
-                        double maxAllowedDistanceInKm = 10.0; 
-
-                        if (closestZone != null &&
-                            minDistance <= maxAllowedDistanceInKm) {
-                          final targetLatLng = closestZone['center'] as LatLng;
-                          final GoogleMapController? controller =
-                              _mapController;
-
-                          if (controller != null) {
-                            await controller.animateCamera(
-                              CameraUpdate.newLatLngZoom(targetLatLng, 16.5),
+                          child: const Icon(Icons.refresh, color: Colors.black87),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Location Navigation Button
+                      GestureDetector(
+                        onTap: () async {
+                          Position? userPos = await _getUserLocation();
+                          if (userPos != null && _mapController != null) {
+                            _mapController!.animateCamera(
+                              CameraUpdate.newLatLngZoom(LatLng(userPos.latitude, userPos.longitude), 15),
                             );
                           }
-
-                          if (mounted) {
-                            _showZoneVehiclesSheet(context, closestZone);
-                          }
-                        } else {
-                          if (mounted) {
-                            _showNoZonesAlert(context);
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E1452),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        elevation: 10,
-                        shadowColor: const Color(0x661E1452),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.near_me, color: Colors.white),
-                          SizedBox(width: 10),
-                          Text(
-                            "Find Nearby",
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        ],
+                          child: const Icon(Icons.near_me_outlined, color: Colors.black87),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
+
+                // Loading Overlay
                 if (!_mapReady)
                   Container(
-                    color: const Color(0xFFF5F6FA),
-                    child: const Center(
+                    color: const Color(0xFFF8F8FA),
+                    child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(color: Color(0xFF1E1452)),
-                          SizedBox(height: 16),
+                          const CircularProgressIndicator(color: Color(0xFF4B1DB8)),
+                          const SizedBox(height: 16),
                           Text(
                             "Loading map...",
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
                           ),
                         ],
                       ),
@@ -754,364 +830,247 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
   }
 
+  // ignore: unused_element
   void _showZoneVehiclesSheet(BuildContext context, Map<String, dynamic> zone) {
-    String zoneName = zone['zoneName']?.toString() ?? 'eVegah Parking Zone';
-    String zoneAddress =
-        zone['zone_address']?.toString() ?? 'Address not available';
-    List<dynamic> zoneVehicles = zone['vehicles'] ?? [];
+    String zoneName = zone['zoneName']?.toString() ?? 'Lekki Phase 1';
+    
+    // Calculate distance if available
+    String distanceStr = "500 m away";
+    if (_currentUserPosition != null && zone['center'] != null) {
+      final center = zone['center'] as LatLng;
+      double distKm = _calculateDistance(
+        _currentUserPosition!.latitude,
+        _currentUserPosition!.longitude,
+        center.latitude,
+        center.longitude,
+      );
+      if (distKm < 1) {
+        distanceStr = "${(distKm * 1000).toInt()} m away";
+      } else {
+        distanceStr = "${distKm.toStringAsFixed(1)} km away";
+      }
+    }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.55,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                height: 5,
-                width: 50,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(10),
-                ),
+        int selectedVehicleIndex = 0; // State for vehicle selection
+        
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)), // Border radius 32
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 8, 8),
-                child: Row(
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Prevents overflow, wraps content
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
+                    // Drag indicator
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 12, bottom: 20),
+                        height: 4,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    
+                    // Location Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            zoneName,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                          const Icon(Icons.location_on_outlined, color: Color(0xFF4B1DB8), size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  zoneName,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  distanceStr,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  zoneAddress,
-                                  maxLines: 2, // 🚨 THE MAGIC FIX: Limits to 2 lines
-                                  overflow: TextOverflow.ellipsis, // 🚨 Adds "..." at the end
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey,
-                                    height: 1.3,
-                                  ),
+                          // Status badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "Open",
+                                  style: GoogleFonts.poppins(color: Colors.green.shade700, fontWeight: FontWeight.bold, fontSize: 12),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  final centerPoint = zone['center'];
-                                  if (centerPoint != null) {
-                                    _launchDirections(
-                                      centerPoint.latitude,
-                                      centerPoint.longitude,
-                                    );
-                                  }
-                                },
-                                icon: const Icon(
-                                  Icons.directions_walk,
-                                  size: 16,
-                                  color: Color(0xFF1E1452),
+                                Text(
+                                  " â€¢ Closes 10:00 PM",
+                                  style: GoogleFonts.poppins(color: Colors.green.shade700, fontSize: 12),
                                 ),
-                                label: const Text(
-                                  "Directions",
-                                  style: TextStyle(
-                                    color: Color(0xFF1E1452),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  side: const BorderSide(color: Color(0xFF1E1452), width: 1),
-                                ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Icon(Icons.chevron_right, color: Colors.green.shade700, size: 16),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black54),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              Builder(
-                builder: (context) {
-                  bool isEmptyZone = zoneVehicles.isEmpty;
-                  bool isHighDemand =
-                      zoneVehicles.isNotEmpty && zoneVehicles.length <= 2;
-
-                  Map<String, dynamic>? alternativeZone;
-                  if (isEmptyZone || isHighDemand) {
-                    alternativeZone = _getBestAlternativeZone(zone);
-                  }
-
-                  return Column(
-                    children: [
-                      if (isEmptyZone)
-                        Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: Colors.red,
-                                size: 22,
-                              ),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  "All bikes are currently rented from this zone.",
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      if (isHighDemand)
-                        Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange.shade200),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.local_fire_department,
-                                color: Colors.orange,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  "High Demand Area! Bikes here usually go fast.",
-                                  style: TextStyle(
-                                    color: Colors.deepOrange,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      if (alternativeZone != null)
-                        Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 4,
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0EDFF),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF1E1452).withOpacity(0.2),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.lightbulb_circle,
-                                color: Color(0xFF1E1452),
-                                size: 28,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      "Nearest Available Bikes",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        color: Color(0xFF1E1452),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      "${alternativeZone['zoneName']} has ${alternativeZone['vehicles']?.length} bikes and is just ${(alternativeZone['temp_distance'] * 1000).toInt()}m away.",
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.directions,
-                                  color: Color(0xFF1E1452),
-                                ),
-                                onPressed: () {
-                                  final altCenter =
-                                      alternativeZone!['center'] as LatLng;
-                                  _launchDirections(
-                                    altCenter.latitude,
-                                    altCenter.longitude,
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              Divider(thickness: 1, color: Colors.grey[300], height: 24),
-              if (zoneVehicles.isNotEmpty) 
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Vehicle No.",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      Text(
-                        "Status",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              Expanded(
-                child: zoneVehicles.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No vehicles currently available here.",
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: zoneVehicles.length,
-                        separatorBuilder: (context, index) => Divider(
-                          color: Colors.grey.shade200,
-                          indent: 24,
-                          endIndent: 24,
-                          height: 1,
-                        ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Vehicle Cards (Horizontal scroll)
+                    SizedBox(
+                      height: 180,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: 3, 
                         itemBuilder: (context, index) {
-                          final vehicle = zoneVehicles[index];
-                          final String vehicleId =  vehicle['lockNumber']?.toString() ?? "Unknown";
-                          final int battery =
-                              int.tryParse(
-                                vehicle['batteryPercentage']?.toString() ??
-                                    '-1',
-                              ) ??
-                              -1;
-                          final String statusText = battery < 0
-                              ? "Available - NA"
-                              : "Available - $battery%";
-
-                          return InkWell(
+                          bool isSelected = selectedVehicleIndex == index;
+                          
+                          String title = ["E-Scooter", "E-Bike", "Cycle"][index];
+                          String price = ["From â‚¦250", "From â‚¦400", "From â‚¦150"][index];
+                          IconData fallbackIcon = [Icons.electric_scooter, Icons.electric_bike, Icons.pedal_bike][index];
+                          
+                          return GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => VehicleDetailsScreen(
-                                    vehicleId: vehicleId,
-                                  ),
-                                ),
-                              );
+                              setModalState(() {
+                                selectedVehicleIndex = index;
+                              });
                             },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 18,
+                            child: Container(
+                              width: 140,
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected ? const Color(0xFF4B1DB8).withValues(alpha: 0.04) : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected ? const Color(0xFF4B1DB8) : Colors.grey.shade200,
+                                  width: isSelected ? 2 : 1,
+                                ),
                               ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                              child: Stack(
                                 children: [
-                                  Text(
-                                    vehicleId,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 15,
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          child: Center(
+                                            child: Icon(fallbackIcon, size: 60, color: const Color(0xFF4B1DB8)),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          title,
+                                          style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        Text(
+                                          price,
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    statusText,
-                                    style: TextStyle(
-                                      color: battery < 0
-                                          ? Colors.grey.shade600
-                                          : Colors.green.shade700,
-                                      fontWeight: FontWeight.w600,
+                                  if (isSelected)
+                                    Positioned(
+                                      top: 12,
+                                      right: 12,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF4B1DB8),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.check, color: Colors.white, size: 14),
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
                           );
                         },
                       ),
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Scan to Unlock Button
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: Container(
+                        width: double.infinity,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF4B1DB8), Color(0xFF331879)],
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context); // Close sheet
+                            // Existing navigation logic: navigate to Scan Screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const ScanQrScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          ),
+                          icon: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 24),
+                          label: Text(
+                            "Scan to Unlock",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            );
+          }
         );
       },
     );
@@ -1276,7 +1235,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
                           ),
                         ),
                         Text(
-                          "₹${tempPrice.toStringAsFixed(2)}",
+                          "â‚¹${tempPrice.toStringAsFixed(2)}",
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1341,6 +1300,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     );
   }
 
+  // ignore: unused_element
   Future<void> _launchDirections(
     double destinationLat,
     double destinationLng,
@@ -1356,6 +1316,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
     }
   }
 
+  // ignore: unused_element
   Map<String, dynamic>? _getBestAlternativeZone(
     Map<String, dynamic> currentZone,
   ) {
@@ -1415,7 +1376,7 @@ class _MapDiscoveryScreenState extends State<MapDiscoveryScreen> {
   }
 }
 
-// 🚨 Place this at the very bottom of the file, outside of the main class!
+// ðŸš¨ Place this at the very bottom of the file, outside of the main class!
 class ZonePlace with ClusterItem {
   final String name;
   final Map<String, dynamic> rawData;

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:math';
 
@@ -17,7 +18,7 @@ class AuthService {
   Future<bool> checkMobileNumber(String mobileNumber) async {
     final url = Uri.parse("${baseUrl}CheckCustomerMobileNumber");
 
-    print("🚀 CALLING CHECK MOBILE API...");
+    debugPrint("🚀 CALLING CHECK MOBILE API...");
 
     final response = await http.post(
       url,
@@ -25,8 +26,8 @@ class AuthService {
       body: jsonEncode({"mobileNumber": mobileNumber}),
     );
 
-    print("🚀 CHECK MOBILE STATUS: ${response.statusCode}");
-    print("🚀 CHECK MOBILE RESPONSE: ${response.body}"); // <-- This will show us the truth!
+    debugPrint("🚀 CHECK MOBILE STATUS: ${response.statusCode}");
+    debugPrint("🚀 CHECK MOBILE RESPONSE: ${response.body}"); // <-- This will show us the truth!
 
     if (response.statusCode == 200) {
       final decodedResponse = jsonDecode(response.body);
@@ -43,7 +44,7 @@ class AuthService {
       }
 
       accessToken = token;
-      print("🚀 EXTRACTED TOKEN: '$accessToken'");
+      debugPrint("🚀 EXTRACTED TOKEN: '$accessToken'");
 
       return true;
     }
